@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .content { max-width: 640px; }
+  .skill-tag { display:inline-flex; align-items:center; gap:8px; background:var(--violet-100);
+    color:var(--violet-700); padding:6px 10px; border-radius:999px; font-size:12.5px;
+    font-weight:700; margin:4px 6px 4px 0; }
+  .skill-tag button { background:none; border:none; color:var(--violet-500); cursor:pointer; font-size:14px; }
+  .upload-zone { border:1.5px dashed var(--ink-100); border-radius:var(--r-lg); padding:28px; text-align:center;
+    cursor:pointer; background:var(--ink-50); transition: all var(--dur-base) var(--ease-out); }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--violet-500); background: var(--violet-50, var(--violet-100)); }
+  .status-text { font-size:13px; color: var(--ink-500); margin-top:10px; }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="content">
+      <div class="page-head"><div><h1>My Profile</h1></div></div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h3>Skills</h3>
+        <div style="display:flex; gap:8px; margin:14px 0;">
+          <input class="input" id="skillName" placeholder="Add a skill, e.g. Python">
+          <select class="input" id="skillLevel" style="width:140px;">
+            <option value="90">Advanced</option>
+            <option value="65" selected>Intermediate</option>
+            <option value="35">Beginner</option>
+          </select>
+          <button class="btn btn-primary" id="addSkillBtn" type="button">Add</button>
+        </div>
+        <div id="skillTags"></div>
+
+        <h3 style="margin-top:24px;">Career goal</h3>
+        <input class="input" id="careerGoal" style="margin-top:10px;" placeholder="e.g. Software engineer, backend-focused">
+
+        <button class="btn btn-primary" id="saveBtn" style="margin-top:20px;">Save changes</button>
+      </div>
+
+      <div class="card">
+        <h3>Resume</h3>
+        <p class="help-text">No resume yet? <a href="../assets/files/ITern_Resume_Template.pdf" download style="color:var(--violet-600);font-weight:700;">Download our template</a>, fill it in, and upload the PDF below.</p>
+        <div class="upload-zone" id="uploadZone" style="margin-top:14px;">
+          <div style="font-size:24px;margin-bottom:8px;">&#128196;</div>
+          <div style="font-weight:700;font-size:13px;">Click or drag your resume here</div>
+          <div class="help-text">PDF only, up to 10MB</div>
+          <input type="file" id="resumeInput" accept="application/pdf" hidden>
+        </div>
+        <div class="error-text" id="resumeErr">Only PDF files are accepted.</div>
+        <div class="status-text" id="resumeStatus"></div>
+      </div>
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, Session, API_BASE } from '../assets/js/api.js';
+import { renderNav } from '../assets/js/nav.js';
+renderNav('student', 'profile');
+
+let skills = [];
+
+async function load() {
+  const me = await api('/interns/me', { token: Session.token() });
+  skills = me.skills.map(s => ({ name: s.name, level: s.level }));
+  careerGoal.value = me.career_goal || '';
+  renderSkills();
+  if (me.resume_path) resumeStatus.textContent = 'Resume on file — upload a new one to replace it.';
+}
+
+function renderSkills() {
+  skillTags.innerHTML = skills.map((s, i) =>
+    `<span class="skill-tag">${s.name} · ${s.level}%<button data-i="${i}">&times;</button></span>`
+  ).join('') || '<p style="color:var(--ink-500);font-size:13px;">No skills yet.</p>';
+  skillTags.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    skills.splice(Number(b.dataset.i), 1);
+    renderSkills();
+  }));
+}
+
+addSkillBtn.addEventListener('click', () => {
+  if (!skillName.value.trim()) return;
+  skills.push({ name: skillName.value.trim(), level: Number(skillLevel.value) });
+  skillName.value = '';
+  renderSkills();
+});
+
+saveBtn.addEventListener('click', async () => {
+  await api('/interns/me', { method: 'PATCH', token: Session.token(), body: { careerGoal: careerGoal.value, skills } });
+  saveBtn.textContent = 'Saved ✓';
+  setTimeout(() => saveBtn.textContent = 'Save changes', 1500);
+});
+
+uploadZone.addEventListener('click', () => resumeInput.click());
+['dragover', 'dragleave', 'drop'].forEach(evt => uploadZone.addEventListener(evt, (e) => {
+  e.preventDefault();
+  uploadZone.classList.toggle('dragover', evt === 'dragover');
+  if (evt === 'drop' && e.dataTransfer.files[0]) handleResume(e.dataTransfer.files[0]);
+}));
+resumeInput.addEventListener('change', (e) => { if (e.target.files[0]) handleResume(e.target.files[0]); });
+
+async function handleResume(file) {
+  if (file.type !== 'application/pdf') {
+    resumeErr.classList.add('show');
+    return;
+  }
+  resumeErr.classList.remove('show');
+  resumeStatus.textContent = 'Uploading…';
+  const form = new FormData();
+  form.append('resume', file);
+  const res = await fetch(API_BASE + '/interns/resume', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${Session.token()}` },
+    body: form,
+  });
+  const data = await res.json();
+  resumeStatus.textContent = res.ok ? `Uploaded: ${data.fileName}` : data.error;
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Profile · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .content { max-width: 640px; }
+  .company-header { display:flex; align-items:center; gap:16px; }
+  .company-header .photo {
+    width:72px; height:72px; border-radius:50%; object-fit:cover; background:var(--violet-100);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-display);
+    font-weight:800; font-size:22px; color:var(--violet-700); flex-shrink:0; border:1px solid var(--ink-100);
+  }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="content"><div id="content">Loading…</div></div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, API_BASE } from '../assets/js/api.js';
+import { renderNav } from '../assets/js/nav.js';
+renderNav('student', 'matches');
+
+const params = new URLSearchParams(window.location.search);
+const companyId = params.get('id');
+const ORIGIN = API_BASE.replace('/api', '');
+
+async function load() {
+  const company = await api(`/companies/${companyId}/public`);
+  const initials = (company.name || '?').slice(0, 2).toUpperCase();
+  const photoHtml = company.profile_photo_path
+    ? `<img class="photo" src="${ORIGIN}/${company.profile_photo_path}" alt="${company.name}">`
+    : `<div class="photo">${initials}</div>`;
+
+  content.innerHTML = `
+    <div class="page-head">
+      <div class="company-header">
+        ${photoHtml}
+        <div><h1>${company.name}</h1><p>${company.industry || ''}</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <p>${company.about || 'No description yet.'}</p>
+    </div>`;
+}
+load();
+</script>
+</body>
+</html>

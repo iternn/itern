@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>.quick-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="page-head">
+        <div><h1 id="greeting">Welcome</h1><p>Here's where to pick up.</p></div>
+      </div>
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card"><div class="value" id="statApplied">–</div><div class="label">Active applications</div></div>
+        <div class="stat-card"><div class="value" id="statInterviews">–</div><div class="label">Interviews scheduled</div></div>
+        <div class="stat-card"><div class="value" id="statSkills">–</div><div class="label">Skills on profile</div></div>
+        <div class="stat-card"><div class="value" id="statTopMatch">–</div><div class="label">Top match score</div></div>
+      </div>
+      <div class="quick-grid">
+        <a class="card" href="profile.html"><h3>Profile</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Update skills and your resume</p></a>
+        <a class="card" href="skills-test.html"><h3>Verify Skills</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Confirm a resume-claimed skill is real</p></a>
+        <a class="card" href="matches.html"><h3>Matches</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">See ranked internships</p></a>
+        <a class="card" href="applications.html"><h3>Applications</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Track your pipeline</p></a>
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+import { renderNav } from '../assets/js/nav.js';
+renderNav('student', 'dashboard');
+const user = Session.get();
+if (!user) window.location.href = 'login.html';
+else greeting.textContent = `Welcome, ${user.name.split(' ')[0]}`;
+
+async function loadStats() {
+  try {
+    const [me, apps] = await Promise.all([
+      api('/interns/me', { token: Session.token() }),
+      api('/applications/mine', { token: Session.token() }),
+    ]);
+    const activeStatuses = ['Applied', 'Waitlisted', 'Interviewing'];
+    statApplied.textContent = apps.filter(a => activeStatuses.includes(a.status)).length;
+    statInterviews.textContent = apps.filter(a => a.status === 'Interviewing' && a.scheduled_at).length;
+    statSkills.textContent = me.skills.length;
+    statTopMatch.textContent = apps.length ? Math.max(...apps.map(a => a.match_score)) + '%' : '—';
+  } catch {
+    // Any single stat failing shouldn't break the page — leave dashes in place.
+  }
+}
+loadStats();
+</script>
+</body>
+</html>

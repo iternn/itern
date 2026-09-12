@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · ITern for Companies</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>.quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="page-head"><div><h1 id="greeting">Welcome</h1><p>Here's your hiring pipeline at a glance.</p></div></div>
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card"><div class="value" id="statActivePostings">–</div><div class="label">Active postings</div></div>
+        <div class="stat-card"><div class="value" id="statApplicants">–</div><div class="label">Total applicants</div></div>
+        <div class="stat-card"><div class="value" id="statWaitlisted">–</div><div class="label">Waitlisted</div></div>
+        <div class="stat-card"><div class="value" id="statAvgMatch">–</div><div class="label">Avg match score</div></div>
+      </div>
+      <div class="quick-grid">
+        <a class="card" href="profile.html"><h3>Company Profile</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">About, industry, and photos</p></a>
+        <a class="card" href="postings.html"><h3>Postings</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Create and manage internships</p></a>
+        <a class="card" href="applicants.html"><h3>Applicants</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Review and schedule interviews</p></a>
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+import { renderNav } from '../assets/js/nav.js';
+renderNav('company', 'dashboard');
+const user = Session.get();
+if (!user) window.location.href = 'login.html';
+else greeting.textContent = `Welcome, ${user.name}`;
+
+async function loadStats() {
+  try {
+    const [postings, apps] = await Promise.all([
+      api('/postings/mine', { token: Session.token() }),
+      api('/applications/company', { token: Session.token() }),
+    ]);
+    statActivePostings.textContent = postings.filter(p => p.status === 'Active').length;
+    statApplicants.textContent = apps.length;
+    statWaitlisted.textContent = apps.filter(a => a.status === 'Waitlisted').length;
+    statAvgMatch.textContent = apps.length
+      ? Math.round(apps.reduce((sum, a) => sum + a.match_score, 0) / apps.length) + '%'
+      : '—';
+  } catch {
+    // Leave dashes in place if a stat can't be computed.
+  }
+}
+loadStats();
+</script>
+</body>
+</html>

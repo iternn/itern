@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITern — Company Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="auth-visual">
+      <h2>Post once. Meet students who already fit.</h2>
+      <div class="float-card">
+        <div style="font-size:12px;color:var(--ink-500);font-weight:600;margin-bottom:10px;">Frontend Intern</div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;">
+          <span>3 applicants</span><span style="color:var(--mint-600);font-weight:700;">2 strong matches</span>
+        </div>
+      </div>
+    </section>
+    <section class="auth-form-side">
+      <div class="inner">
+        <div class="brand-row"><div class="mark">IT</div><div class="name">ITern</div></div>
+        <div class="step-dots"><span class="done"></span><span id="d2"></span></div>
+
+        <div id="step1">
+          <h1>Create a company account</h1>
+          <p class="sub">Step 1 of 2</p>
+          <form id="accountForm">
+            <div class="field"><label>Company name</label><input class="input" id="name" required></div>
+            <div class="field"><label>Work email</label><input class="input" id="email" type="email" required></div>
+            <div class="field"><label>Industry</label><input class="input" id="industry" placeholder="Software"></div>
+            <div class="field"><label>Password</label><input class="input" id="password" type="password" required minlength="8"></div>
+            <button class="btn btn-primary btn-block" type="submit">Continue</button>
+          </form>
+        </div>
+
+        <div id="step2" class="step-hidden">
+          <h1>Verify your work email</h1>
+          <p class="sub">Step 2 of 2 — check the backend terminal for the code</p>
+          <form id="otpForm">
+            <div class="otp-row">
+              <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
+              <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
+            </div>
+            <div class="error-text" id="otpErr">That code isn't right.</div>
+            <button class="btn btn-primary btn-block" type="submit">Verify &amp; create account</button>
+          </form>
+        </div>
+        <p class="auth-footnote">Already have an account? <a class="link" href="login.html">Log in</a></p>
+      </div>
+    </section>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+let draft = {};
+
+document.getElementById('accountForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  draft = {
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value,
+    industry: document.getElementById('industry').value,
+  };
+  try {
+    await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } });
+    step1.classList.add('step-hidden'); step2.classList.remove('step-hidden'); d2.classList.add('done');
+  } catch (err) {
+    alert('Could not send verification code: ' + err.message);
+  }
+});
+
+const otpInputs = [...document.querySelectorAll('.otp-row input')];
+otpInputs.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    inp.classList.toggle('filled', !!inp.value);
+    if (inp.value && otpInputs[i + 1]) otpInputs[i + 1].focus();
+  });
+});
+
+document.getElementById('otpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = otpInputs.map(i => i.value).join('');
+  try {
+    await api('/auth/otp/verify', { method: 'POST', body: { email: draft.email, code, purpose: 'register' } });
+  } catch (err) {
+    otpErr.textContent = err.message;
+    otpErr.classList.add('show');
+    return;
+  }
+  try {
+    const { user, token } = await api('/auth/register/company', { method: 'POST', body: draft });
+    Session.set(user, token);
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    alert('Registration failed: ' + err.message);
+    console.error('Registration error:', err);
+  }
+});
+</script>
+</body>
+</html>

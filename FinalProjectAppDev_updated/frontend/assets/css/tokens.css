@@ -1,0 +1,48 @@
+:root {
+  --violet-50:  #F5F3FF;
+  --violet-100: #EDE9FE;
+  --violet-300: #C1AFFC;
+  --violet-500: #6D4AFF;
+  --violet-600: #5B32F2;
+  --violet-700: #4A22D6;
+  --violet-900: #241259;
+
+  --mint-400: #2FE0B8;
+  --mint-500: #12C79E;
+  --mint-600: #0AA382;
+
+  --amber-500: #F5A524;
+  --rose-500:  #F0506B;
+
+  --ink-900: #14101F;
+  --ink-700: #2B2440;
+  --ink-500: #6E6784;
+  --ink-300: #A6A0BC;
+  --ink-100: #E4E1EF;
+  --ink-50:  #F1EFF8;
+
+  --bg-canvas: #F6F5FB;
+  --bg-sidebar: #171129;
+  --bg-sidebar-hover: #241B3E;
+
+  --gradient-hero: linear-gradient(135deg, #7C5CFF 0%, #6D4AFF 45%, #4A22D6 100%);
+  --gradient-mint: linear-gradient(135deg, #2FE0B8 0%, #12C79E 100%);
+  --gradient-mesh: radial-gradient(circle at 15% 20%, rgba(124,92,255,.35), transparent 45%),
+                    radial-gradient(circle at 85% 15%, rgba(47,224,184,.25), transparent 40%),
+                    radial-gradient(circle at 50% 90%, rgba(124,92,255,.20), transparent 45%);
+
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  --r-sm: 8px; --r-md: 12px; --r-lg: 18px; --r-xl: 24px; --r-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(20,16,31,.06);
+  --shadow-md: 0 8px 24px -8px rgba(43,36,64,.18);
+  --shadow-lg: 0 20px 48px -12px rgba(43,36,64,.28);
+  --shadow-glow: 0 0 0 1px rgba(109,74,255,.08), 0 12px 32px -8px rgba(109,74,255,.35);
+
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --dur-fast: 140ms;
+  --dur-base: 260ms;
+}

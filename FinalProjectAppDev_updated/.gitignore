@@ -1,0 +1,26 @@
+# --- Secrets — NEVER commit these ---
+backend/.env
+ml/.env
+*.env
+!*.env.example
+
+# --- Node ---
+backend/node_modules/
+npm-debug.log*
+
+# --- Python ---
+ml/venv/
+ml/__pycache__/
+**/__pycache__/
+*.pyc
+
+# --- Uploaded user content (resumes/photos) — keep the folders, not the files ---
+backend/uploads/resumes/*
+backend/uploads/photos/*
+!backend/uploads/resumes/.gitkeep
+!backend/uploads/photos/.gitkeep
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+.vscode/

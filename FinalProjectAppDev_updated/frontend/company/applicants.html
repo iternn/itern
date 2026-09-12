@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Applicants · ITern for Companies</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>.content { max-width: 820px; }</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="content">
+      <div class="page-head"><div><h1>Applicants</h1><p>Ranked by fit across all postings.</p></div></div>
+      <div class="card" style="margin-bottom:16px;padding:14px 18px;display:flex;gap:10px;">
+        <input class="input" id="searchInput" placeholder="Search by student name, school, or posting…">
+        <select class="input" id="statusFilter" style="width:180px;">
+          <option value="">All statuses</option>
+          <option>Applied</option><option>Waitlisted</option><option>Interviewing</option><option>Offer</option><option>Rejected</option>
+        </select>
+      </div>
+      <div class="card" style="padding:6px 24px;"><div class="row-list" id="list"></div></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="backdrop"><div class="modal" id="modalBody"></div></div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+import { renderNav, matchRing } from '../assets/js/nav.js';
+renderNav('company', 'applicants');
+
+const STAGES = ['Applied', 'Waitlisted', 'Interviewing', 'Offer', 'Rejected'];
+let allApps = [];
+
+async function draw() {
+  allApps = await api('/applications/company', { token: Session.token() });
+  render();
+}
+
+function render() {
+  const q = searchInput.value.trim().toLowerCase();
+  const statusQ = statusFilter.value;
+  const apps = allApps.filter(a => {
+    const matchesText = !q || a.intern_name.toLowerCase().includes(q) || a.school.toLowerCase().includes(q) || a.title.toLowerCase().includes(q);
+    const matchesStatus = !statusQ || a.status === statusQ;
+    return matchesText && matchesStatus;
+  });
+
+  list.innerHTML = apps.map(a => `
+    <div class="row-item">
+      ${matchRing(a.match_score, { size: 44 })}
+      <div>
+        <div class="row-title">${a.intern_name}</div>
+        <div class="row-sub">${a.school} · applied for ${a.title}</div>
+      </div>
+      <div class="row-meta">
+        <select class="input" style="width:150px;" data-status="${a.id}">
+          ${STAGES.map(s => `<option ${s === a.status ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+        <button class="btn btn-ghost btn-sm" data-view="${a.intern_id}" data-app="${a.id}" type="button">View profile</button>
+      </div>
+    </div>`).join('') || `<div class="empty-state">${allApps.length ? 'No applicants match your search.' : 'No applicants yet.'}</div>`;
+
+  list.querySelectorAll('[data-status]').forEach(sel => sel.addEventListener('change', async () => {
+    await api(`/applications/${sel.dataset.status}/status`, { method: 'PATCH', token: Session.token(), body: { status: sel.value } });
+    draw();
+  }));
+  list.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => openProfile(btn.dataset.view, btn.dataset.app)));
+}
+
+async function openProfile(internId, applicationId) {
+  const intern = await api(`/interns/${internId}/public`, { token: Session.token() });
+  modalBody.innerHTML = `
+    <h3>${intern.name}</h3>
+    <p style="color:var(--ink-500);font-size:13px;margin-top:4px;">${intern.school} · ${intern.program}</p>
+    <p style="margin:12px 0;font-size:13.5px;">${intern.career_goal || ''}</p>
+    <div style="margin-bottom:14px;">
+      ${intern.skills.map(s => `<span class="badge badge-neutral" style="margin:2px;">${s.name} · ${s.level}% (${s.source})</span>`).join('')}
+    </div>
+    ${intern.testScores.length ? `<p style="font-size:12.5px;font-weight:700;">Verified test scores</p>
+      ${intern.testScores.map(t => `<div style="font-size:12.5px;color:var(--ink-500);">${t.skill}: ${t.best_score}%</div>`).join('')}` : ''}
+    ${intern.resume_path ? '<p style="margin-top:10px;font-size:12.5px;color:var(--mint-600);font-weight:700;">Resume on file</p>' : ''}
+    <hr style="margin:16px 0;border:none;border-top:1px solid var(--ink-100);">
+    <h4 style="font-size:14px;">Schedule an interview</h4>
+    <form id="scheduleForm" style="margin-top:12px;">
+      <div class="field"><label>Date &amp; time</label><input class="input" id="scheduledAt" type="datetime-local" required></div>
+      <div class="field"><label>Mode</label>
+        <select class="input" id="ivMode"><option>Video call</option><option>Onsite</option></select>
+      </div>
+      <div class="field"><label>Meeting link</label><input class="input" id="meetingLink" placeholder="https://meet.google.com/..."></div>
+      <div class="field"><label>Interviewer</label><input class="input" id="interviewer"></div>
+      <button class="btn btn-primary btn-block" type="submit">Schedule</button>
+    </form>
+    <button class="btn btn-ghost btn-block" id="closeModalBtn" type="button" style="margin-top:8px;">Close</button>
+  `;
+  document.getElementById('closeModalBtn').addEventListener('click', () => backdrop.classList.remove('open'));
+  document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await api('/interviews', { method: 'POST', token: Session.token(), body: {
+      applicationId, scheduledAt: scheduledAt.value, mode: ivMode.value,
+      meetingLink: meetingLink.value, interviewer: interviewer.value,
+    }});
+    backdrop.classList.remove('open');
+    draw();
+  });
+  backdrop.classList.add('open');
+}
+
+searchInput.addEventListener('input', render);
+statusFilter.addEventListener('change', render);
+draw();
+</script>
+</body>
+</html>

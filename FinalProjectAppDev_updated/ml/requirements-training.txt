@@ -1,0 +1,12 @@
+# Only needed to RE-TRAIN the proficiency model (train_proficiency_model.py
+# + export_pure_model.py). NOT needed to run skill_matcher.py — that service
+# only needs requirements.txt, and deliberately has zero dependency on
+# numpy/scipy/scikit-learn so it can run on machines that block compiled
+# native code (see skill_matcher.py's module docstring for why).
+#
+# The trained model is already included in this project at
+# models/proficiency_model_pure.json — you do NOT need to install this file
+# or re-run training unless you want to change the training data or retrain
+# from scratch.
+scikit-learn
+joblib

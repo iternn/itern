@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITern — Company Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="auth-visual">
+      <h2>Find interns who fit your team's stack.</h2>
+      <div class="float-card">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-500);font-weight:600;margin-bottom:10px;">
+          <span>Top candidate · Frontend Intern</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="avatar" style="background:var(--gradient-hero);color:#fff;">JD</div>
+          <div><div style="font-weight:700;font-size:13px;">Jia Dela Cruz</div><div style="font-size:12px;color:var(--ink-500);">95% match</div></div>
+          <span class="badge badge-strong" style="margin-left:auto;">Shortlisted</span>
+        </div>
+      </div>
+    </section>
+    <section class="auth-form-side">
+      <div class="inner">
+        <div class="brand-row"><div class="mark">IT</div><div class="name">ITern</div></div>
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to manage your postings and applicants.</p>
+        <form id="loginForm">
+          <div class="field"><label>Work email</label><input class="input" id="email" type="email" required></div>
+          <div class="field"><label>Password</label><input class="input" id="password" type="password" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Log in</button>
+          <div class="error-text" id="errorBox"></div>
+        </form>
+        <p class="auth-footnote">New here? <a class="link" href="register.html">Create a company account</a></p>
+      </div>
+    </section>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const { user, token } = await api('/auth/login', { method: 'POST', body: { role: 'company', email: email.value, password: password.value } });
+    Session.set(user, token);
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.add('show');
+  }
+});
+</script>
+</body>
+</html>

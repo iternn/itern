@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Profile · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .content { max-width: 700px; }
+  .avatar-editor { display:flex; align-items:center; gap:18px; margin-bottom:20px; }
+  .avatar-editor .preview {
+    width:88px; height:88px; border-radius:50%; object-fit:cover; background:var(--violet-100);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-display);
+    font-weight:800; font-size:26px; color:var(--violet-700); flex-shrink:0; border:1px solid var(--ink-100);
+  }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="content">
+      <div class="page-head"><div><h1>Company Profile</h1></div></div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:14px;">Profile picture</h3>
+        <div class="avatar-editor">
+          <img class="preview" id="photoPreview" style="display:none;">
+          <div class="preview" id="photoFallback">?</div>
+          <div>
+            <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp">
+            <div class="help-text">PNG, JPG, or WEBP — square images look best</div>
+            <button class="btn btn-ghost btn-sm" id="removePhotoBtn" type="button" style="margin-top:8px;display:none;">Remove photo</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field"><label>Industry</label><input class="input" id="industry"></div>
+        <div class="field"><label>About</label><textarea class="input" id="about" rows="4"></textarea></div>
+        <button class="btn btn-primary" id="saveBtn" type="button">Save changes</button>
+      </div>
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, Session, API_BASE } from '../assets/js/api.js';
+import { renderNav } from '../assets/js/nav.js';
+renderNav('company', 'profile');
+const ORIGIN = API_BASE.replace('/api', '');
+
+async function load() {
+  const me = await api('/companies/me', { token: Session.token() });
+  industry.value = me.industry || '';
+  about.value = me.about || '';
+  renderPhoto(me);
+}
+
+function renderPhoto(me) {
+  if (me.profile_photo_path) {
+    photoPreview.src = `${ORIGIN}/${me.profile_photo_path}`;
+    photoPreview.style.display = 'block';
+    photoFallback.style.display = 'none';
+    removePhotoBtn.style.display = 'inline-flex';
+  } else {
+    photoPreview.style.display = 'none';
+    photoFallback.style.display = 'flex';
+    photoFallback.textContent = (me.name || '?').slice(0, 2).toUpperCase();
+    removePhotoBtn.style.display = 'none';
+  }
+}
+
+saveBtn.addEventListener('click', async () => {
+  await api('/companies/me', { method: 'PATCH', token: Session.token(), body: { industry: industry.value, about: about.value } });
+  saveBtn.textContent = 'Saved ✓';
+  setTimeout(() => saveBtn.textContent = 'Save changes', 1500);
+});
+
+photoInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('photo', file);
+  await fetch(API_BASE + '/companies/photo', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${Session.token()}` },
+    body: form,
+  });
+  photoInput.value = '';
+  load();
+});
+
+removePhotoBtn.addEventListener('click', async () => {
+  await api('/companies/photo', { method: 'DELETE', token: Session.token() });
+  load();
+});
+
+load();
+</script>
+</body>
+</html>

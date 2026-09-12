@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITern — Student Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="auth-visual">
+      <h2>Find the internship that fits your skills.</h2>
+      <div class="float-card">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-500);font-weight:600;margin-bottom:8px;">
+          <span>Frontend Intern Match</span><span>TechNova Inc.</span>
+        </div>
+        <div style="font-family:var(--font-display);font-weight:800;font-size:26px;color:var(--violet-600);margin-bottom:10px;">82%</div>
+        <div class="progress-bar"><div class="fill" style="width:82%"></div></div>
+      </div>
+    </section>
+    <section class="auth-form-side">
+      <div class="inner">
+        <div class="brand-row"><div class="mark">IT</div><div class="name">ITern</div></div>
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to your student account.</p>
+        <form id="loginForm">
+          <div class="field"><label>Email</label><input class="input" id="email" type="email" required></div>
+          <div class="field"><label>Password</label><input class="input" id="password" type="password" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Log in</button>
+          <div class="error-text" id="errorBox"></div>
+        </form>
+        <p class="auth-footnote">New here? <a class="link" href="register.html">Create an account</a></p>
+      </div>
+    </section>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const { user, token } = await api('/auth/login', { method: 'POST', body: { role: 'intern', email: email.value, password: password.value } });
+    Session.set(user, token);
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.add('show');
+  }
+});
+</script>
+</body>
+</html>

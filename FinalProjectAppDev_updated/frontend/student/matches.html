@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matches · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>.content { max-width: 720px; }</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="content">
+      <div class="page-head"><div><h1>Matches</h1><p>Ranked by fit with your skills.</p></div></div>
+      <div class="card" style="padding:6px 24px;"><div class="row-list" id="matchList"></div></div>
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+import { renderNav, matchRing } from '../assets/js/nav.js';
+renderNav('student', 'matches');
+
+function score(internSkills, postingSkills) {
+  if (!postingSkills.length) return 0;
+  const have = new Map(internSkills.map(s => [s.name.toLowerCase(), s.level]));
+  const matched = postingSkills.filter(s => have.has(s.toLowerCase()));
+  const coverage = matched.length / postingSkills.length;
+  const strength = matched.length
+    ? matched.reduce((sum, s) => sum + have.get(s.toLowerCase()), 0) / (matched.length * 100)
+    : 0;
+  return Math.round((coverage * 0.6 + strength * 0.4) * 100);
+}
+
+async function load() {
+  const me = await api('/interns/me', { token: Session.token() });
+  let postings = [];
+  try { postings = await api('/postings'); } catch {}
+  let myApps = [];
+  try { myApps = await api('/applications/mine', { token: Session.token() }); } catch {}
+  const appliedIds = new Set(myApps.map(a => a.posting_id));
+
+  const scored = postings.map(p => ({
+    ...p,
+    skillNames: (p.skills || '').split(',').filter(Boolean),
+  })).map(p => ({ ...p, _score: score(me.skills, p.skillNames) }))
+    .sort((a, b) => b._score - a._score);
+
+  matchList.innerHTML = scored.map(p => `
+    <div class="row-item">
+      ${matchRing(p._score, { size: 48 })}
+      <div>
+        <div class="row-title">${p.title}</div>
+        <div class="row-sub"><a href="company-profile.html?id=${p.company_id}" style="color:var(--violet-600);text-decoration:none;">${p.company_name}</a> · ${p.work_mode}</div>
+      </div>
+      <div class="row-meta">
+        ${appliedIds.has(p.id)
+          ? '<span class="badge badge-neutral">Applied</span>'
+          : `<button class="btn btn-primary btn-sm" data-apply="${p.id}">Apply</button>`}
+      </div>
+    </div>`).join('') || '<div class="empty-state">No active postings yet — check back after Day 5.</div>';
+
+  matchList.querySelectorAll('[data-apply]').forEach(btn => btn.addEventListener('click', async () => {
+    btn.disabled = true; btn.textContent = 'Applying…';
+    try {
+      await api('/applications', { method: 'POST', token: Session.token(), body: { postingId: btn.dataset.apply } });
+      load();
+    } catch (err) {
+      alert(err.message);
+      btn.disabled = false; btn.textContent = 'Apply';
+    }
+  }));
+}
+load();
+</script>
+</body>
+</html>

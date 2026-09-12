@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITern — Student Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="auth-visual">
+      <h2>Build a profile companies actually trust.</h2>
+      <div class="float-card">
+        <div style="font-size:12px;color:var(--ink-500);font-weight:600;margin-bottom:10px;">Verified skills</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="badge badge-strong">Python · 88%</span>
+          <span class="badge badge-good">SQL · 76%</span>
+          <span class="badge badge-neutral">Java · 64%</span>
+        </div>
+      </div>
+    </section>
+    <section class="auth-form-side">
+      <div class="inner">
+        <div class="brand-row"><div class="mark">IT</div><div class="name">ITern</div></div>
+        <div class="step-dots" id="stepDots"><span class="done"></span><span></span><span></span><span></span></div>
+
+        <div id="step1">
+          <h1>Create your account</h1>
+          <p class="sub">Step 1 of 4</p>
+          <form id="accountForm">
+            <div class="field"><label>Full name</label><input class="input" id="name" required></div>
+            <div class="field"><label>School email</label><input class="input" id="email" type="email" required></div>
+            <div class="field"><label>Password</label><input class="input" id="password" type="password" required minlength="8"></div>
+            <button class="btn btn-primary btn-block" type="submit">Continue</button>
+          </form>
+        </div>
+
+        <div id="step2" class="step-hidden">
+          <h1>Verify your email</h1>
+          <p class="sub">Step 2 of 4 — check the backend terminal for the code</p>
+          <form id="otpForm">
+            <div class="otp-row">
+              <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
+              <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
+            </div>
+            <div class="error-text" id="otpErr">That code isn't right.</div>
+            <button class="btn btn-primary btn-block" type="submit">Verify &amp; continue</button>
+          </form>
+        </div>
+
+        <div id="step3" class="step-hidden">
+          <h1>Verify you're a student</h1>
+          <p class="sub">Step 3 of 4</p>
+          <form id="studentForm">
+            <div class="field"><label>School</label><input class="input" id="school" required></div>
+            <div class="field"><label>Program / year</label><input class="input" id="program" required></div>
+            <button class="btn btn-primary btn-block" type="submit">Continue</button>
+          </form>
+        </div>
+
+        <div id="step4" class="step-hidden">
+          <h1>Almost done</h1>
+          <p class="sub">Step 4 of 4 — add skills and a resume after logging in, on your Profile page</p>
+          <a class="card" href="../assets/files/ITern_Resume_Template.pdf" download
+             style="display:flex;align-items:center;gap:12px;text-decoration:none;margin-bottom:20px;padding:14px 16px;">
+            <span style="font-size:20px;">&#128196;</span>
+            <span>
+              <span style="display:block;font-weight:700;font-size:13.5px;color:var(--ink-900);">Download resume template (PDF)</span>
+              <span style="display:block;font-size:12px;color:var(--ink-500);">Fill it in, save as PDF, and upload it on your Profile page</span>
+            </span>
+          </a>
+          <form id="profileForm">
+            <button class="btn btn-primary btn-block" type="submit">Create account</button>
+          </form>
+        </div>
+
+        <p class="auth-footnote">Already have an account? <a class="link" href="login.html">Log in</a></p>
+      </div>
+    </section>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+let draft = {};
+
+const dots = document.querySelectorAll('#stepDots span');
+function showStep(n) {
+  [1, 2, 3, 4].forEach(i => document.getElementById('step' + i).classList.toggle('step-hidden', i !== n));
+  dots.forEach((d, i) => d.classList.toggle('done', i < n));
+}
+
+document.getElementById('accountForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  draft.name = name.value; draft.email = email.value; draft.password = password.value;
+  await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } });
+  showStep(2);
+});
+
+const otpInputs = [...document.querySelectorAll('.otp-row input')];
+otpInputs.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    inp.classList.toggle('filled', !!inp.value);
+    if (inp.value && otpInputs[i + 1]) otpInputs[i + 1].focus();
+  });
+});
+
+document.getElementById('otpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = otpInputs.map(i => i.value).join('');
+  try {
+    await api('/auth/otp/verify', { method: 'POST', body: { email: draft.email, code, purpose: 'register' } });
+    showStep(3);
+  } catch (err) {
+    otpErr.textContent = err.message;
+    otpErr.classList.add('show');
+  }
+});
+
+document.getElementById('studentForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  draft.school = school.value; draft.program = program.value;
+  showStep(4);
+});
+
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { user, token } = await api('/auth/register/intern', { method: 'POST', body: draft });
+  Session.set(user, token);
+  window.location.href = 'dashboard.html';
+});
+</script>
+</body>
+</html>

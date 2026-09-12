@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  body { background: var(--gradient-hero); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  body::before { content: ''; position: absolute; inset: 0; background: var(--gradient-mesh); mix-blend-mode: screen; }
+  .picker { position: relative; background: #fff; border-radius: var(--r-xl); padding: 48px; width: 420px; max-width: 92vw; box-shadow: var(--shadow-lg); text-align: center; }
+  .picker .mark { width: 52px; height: 52px; border-radius: var(--r-md); background: var(--gradient-hero); display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-weight: 800; margin: 0 auto 16px; box-shadow: var(--shadow-glow); }
+  .picker h1 { font-size: 24px; margin-bottom: 8px; }
+  .picker p { color: var(--ink-500); font-size: 13.5px; margin-bottom: 28px; }
+  .picker .opts { display: flex; flex-direction: column; gap: 12px; }
+</style>
+</head>
+<body>
+  <div class="picker">
+    <div class="mark">IT</div>
+    <h1>Welcome to ITern</h1>
+    <p>Match student skills to internships with real signal, not guesswork.</p>
+    <div class="opts">
+      <a class="btn btn-primary btn-block" href="student/login.html">Continue as a student</a>
+      <a class="btn btn-ghost btn-block" href="company/login.html">Continue as a company</a>
+    </div>
+  </div>
+</body>
+</html>

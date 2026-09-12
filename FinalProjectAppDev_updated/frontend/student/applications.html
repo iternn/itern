@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Applications · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>
+  .board { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+  .col-title { font-weight:700; font-size:12.5px; margin-bottom:10px; color:var(--ink-500); text-transform:uppercase; letter-spacing:.04em; }
+  .kcard { margin-bottom:10px; padding:14px; }
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="page-head"><div><h1>Applications</h1><p>Track where each application stands.</p></div></div>
+      <div class="card" style="margin-bottom:16px;padding:14px 18px;">
+        <input class="input" id="searchInput" placeholder="Search by company or posting title…">
+      </div>
+      <div class="board" id="board"></div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+import { renderNav } from '../assets/js/nav.js';
+renderNav('student', 'applications');
+
+const STAGES = ['Applied', 'Waitlisted', 'Interviewing', 'Offer', 'Rejected'];
+let allApps = [];
+
+async function load() {
+  allApps = await api('/applications/mine', { token: Session.token() });
+  draw();
+}
+
+function draw() {
+  const q = searchInput.value.trim().toLowerCase();
+  const apps = q
+    ? allApps.filter(a => a.title.toLowerCase().includes(q) || a.company_name.toLowerCase().includes(q))
+    : allApps;
+
+  board.innerHTML = STAGES.map(stage => {
+    const items = apps.filter(a => a.status === stage);
+    return `<div>
+      <div class="col-title">${stage} (${items.length})</div>
+      ${items.map(a => `
+        <div class="card kcard">
+          <div style="font-weight:700;font-size:13px;">${a.title}</div>
+          <div style="color:var(--ink-500);font-size:12px;margin:4px 0;">${a.company_name}</div>
+          <div style="font-family:var(--font-display);font-weight:800;color:var(--violet-600);font-size:13px;">${a.match_score}%</div>
+          ${a.meeting_link ? `<a href="${a.meeting_link}" target="_blank" class="badge badge-strong" style="margin-top:6px;display:inline-block;text-decoration:none;">Join call</a>` : ''}
+          <button class="btn btn-danger btn-sm" data-withdraw="${a.id}" style="margin-top:8px;width:100%;">Withdraw</button>
+        </div>`).join('') || '<p style="color:var(--ink-300);font-size:12px;">Nothing here.</p>'}
+    </div>`;
+  }).join('');
+
+  board.querySelectorAll('[data-withdraw]').forEach(btn => btn.addEventListener('click', async () => {
+    await api(`/applications/${btn.dataset.withdraw}`, { method: 'DELETE', token: Session.token() });
+    load();
+  }));
+}
+searchInput.addEventListener('input', draw);
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skills Test · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<style>.content { max-width: 600px; }</style>
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <main class="main">
+      <div class="content">
+      <div class="page-head"><div><h1>Verify Resume Skills</h1><p>Take a short quiz on a skill your resume claims — a passing score marks it "verified" so companies can trust it.</p></div></div>
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex;gap:10px;">
+          <select class="input" id="skillSelect"></select>
+          <button class="btn btn-primary" id="startBtn" type="button">Start test</button>
+        </div>
+      </div>
+      <div id="quizArea"></div>
+      </div>
+    </main>
+  </div>
+
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+import { renderNav } from '../assets/js/nav.js';
+renderNav('student', 'skills-test');
+
+let currentSkillId = null;
+let currentQuestions = [];
+
+async function loadSkillOptions() {
+  const me = await api('/interns/me', { token: Session.token() });
+  // Only skills the resume parser actually found are eligible — this page
+  // verifies claims, it isn't a general-purpose quiz picker anymore.
+  const resumeSkills = me.skills.filter(s => s.source === 'resume_parse');
+  skillSelect.innerHTML = resumeSkills.length
+    ? resumeSkills.map(s => `<option value="${s.name}">${s.name}</option>`).join('')
+    : '<option value="">Upload a resume first — no unverified skills found</option>';
+  startBtn.disabled = !resumeSkills.length;
+}
+
+startBtn.addEventListener('click', async () => {
+  const skillName = skillSelect.value;
+  if (!skillName) return;
+  try {
+    const { skillId, questions } = await api(`/skills-test/${encodeURIComponent(skillName)}/questions`, { token: Session.token() });
+    if (!questions.length) { quizArea.innerHTML = '<p style="color:var(--ink-500);">No questions yet for this skill.</p>'; return; }
+    currentSkillId = skillId;
+    currentQuestions = questions;
+    renderQuiz();
+  } catch (err) { alert(err.message); }
+});
+
+function renderQuiz() {
+  quizArea.innerHTML = currentQuestions.map((q, i) => `
+    <div class="card" style="margin-bottom:12px;">
+      <p style="font-weight:700;margin-bottom:10px;font-size:14px;">${i + 1}. ${q.prompt}</p>
+      ${['a','b','c','d'].map(letter => `
+        <label style="display:block;margin-bottom:6px;font-size:13.5px;">
+          <input type="radio" name="q${q.id}" value="${letter.toUpperCase()}"> ${q['choice_' + letter]}
+        </label>`).join('')}
+    </div>`).join('') + '<button class="btn btn-primary" id="submitQuizBtn" type="button">Submit answers</button>';
+  document.getElementById('submitQuizBtn').addEventListener('click', submitQuiz);
+}
+
+async function submitQuiz() {
+  const answers = {};
+  currentQuestions.forEach(q => {
+    const picked = document.querySelector(`input[name="q${q.id}"]:checked`);
+    if (picked) answers[q.id] = picked.value;
+  });
+  const result = await api('/skills-test/submit', { method: 'POST', token: Session.token(), body: { skillId: currentSkillId, answers } });
+  quizArea.innerHTML = `<div class="card"><h3>Score: ${result.scorePct}%</h3>
+    <p style="color:var(--ink-500);margin-top:8px;">${result.correct} of ${result.total} correct — this updated your profile's skill level.</p></div>`;
+}
+
+loadSkillOptions();
+</script>
+</body>
+</html>
