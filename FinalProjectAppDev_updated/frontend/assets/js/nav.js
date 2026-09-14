@@ -1,4 +1,4 @@
-import { api, Session } from './api.js';
+import { api, Session, API_BASE } from './api.js';
 
 const STUDENT_LINKS = [
   { href: 'dashboard.html', label: 'Dashboard', key: 'dashboard' },
@@ -41,7 +41,7 @@ export function renderNav(portal, activeKey) {
       <div class="sidebar__spacer"></div>
       <a href="profile.html" style="text-decoration:none;">
         <div class="sidebar__user" title="Edit your profile">
-          <div class="avatar">${initials}</div>
+          <div class="avatar" id="sidebarAvatar">${initials}</div>
           <div>
             <div class="sidebar__user-name">${user?.name || 'Guest'}</div>
             <div class="sidebar__user-role">${portal === 'company' ? 'Company' : 'Student'}</div>
@@ -78,6 +78,32 @@ export function renderNav(portal, activeKey) {
 
   loadNotifications();
   setInterval(loadNotifications, 30000);
+
+  // The user object cached in Session is only a snapshot from login time —
+  // it never reflects a profile picture uploaded/changed/removed afterward.
+  // Fetch the current record on every page load so the sidebar stays in
+  // sync with whatever was last saved on the Profile page.
+  async function loadAvatar() {
+    const avatarEl = document.getElementById('sidebarAvatar');
+    if (!avatarEl) return;
+    try {
+      const endpoint = portal === 'company' ? '/companies/me' : '/interns/me';
+      const me = await api(endpoint, { token: Session.token() });
+      if (me.profile_photo_path) {
+        avatarEl.innerHTML = `<img src="${API_BASE.replace('/api', '')}/${me.profile_photo_path}" alt="${me.name || ''}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else {
+        avatarEl.textContent = initials;
+      }
+    } catch {
+      // /me can fail before the DB migration for profile_photo_path has
+      // been run, or if the token is stale — fall back to initials rather
+      // than leaving the sidebar broken.
+      avatarEl.textContent = initials;
+    }
+  }
+
+  loadAvatar();
+  return { refreshAvatar: loadAvatar };
 }
 
 /** Renders an inline SVG match ring — call after inserting HTML that contains
