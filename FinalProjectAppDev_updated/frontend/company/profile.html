@@ -49,14 +49,21 @@
 <script type="module">
 import { api, Session, API_BASE } from '../assets/js/api.js';
 import { renderNav } from '../assets/js/nav.js';
-renderNav('company', 'profile');
+const nav = renderNav('company', 'profile');
 const ORIGIN = API_BASE.replace('/api', '');
 
 async function load() {
-  const me = await api('/companies/me', { token: Session.token() });
-  industry.value = me.industry || '';
-  about.value = me.about || '';
-  renderPhoto(me);
+  try {
+    const me = await api('/companies/me', { token: Session.token() });
+    industry.value = me.industry || '';
+    about.value = me.about || '';
+    renderPhoto(me);
+  } catch (err) {
+    // Most common cause: the profile_photo_path migration hasn't been run
+    // yet, which makes the GET /companies/me query throw on the server —
+    // surfacing this beats leaving the form silently blank.
+    alert(`Couldn't load your profile: ${err.message}\n\nIf this mentions profile_photo_path, run backend/db/migration_2026-09.sql against your database and restart the backend.`);
+  }
 }
 
 function renderPhoto(me) {
@@ -74,9 +81,13 @@ function renderPhoto(me) {
 }
 
 saveBtn.addEventListener('click', async () => {
-  await api('/companies/me', { method: 'PATCH', token: Session.token(), body: { industry: industry.value, about: about.value } });
-  saveBtn.textContent = 'Saved ✓';
-  setTimeout(() => saveBtn.textContent = 'Save changes', 1500);
+  try {
+    await api('/companies/me', { method: 'PATCH', token: Session.token(), body: { industry: industry.value, about: about.value } });
+    saveBtn.textContent = 'Saved ✓';
+    setTimeout(() => saveBtn.textContent = 'Save changes', 1500);
+  } catch (err) {
+    alert(`Couldn't save: ${err.message}`);
+  }
 });
 
 photoInput.addEventListener('change', async (e) => {
@@ -84,18 +95,32 @@ photoInput.addEventListener('change', async (e) => {
   if (!file) return;
   const form = new FormData();
   form.append('photo', file);
-  await fetch(API_BASE + '/companies/photo', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${Session.token()}` },
-    body: form,
-  });
-  photoInput.value = '';
-  load();
+  try {
+    const res = await fetch(API_BASE + '/companies/photo', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${Session.token()}` },
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
+  } catch (err) {
+    alert(`Couldn't upload photo: ${err.message}`);
+  } finally {
+    photoInput.value = '';
+    await load();
+    nav?.refreshAvatar();
+  }
 });
 
 removePhotoBtn.addEventListener('click', async () => {
-  await api('/companies/photo', { method: 'DELETE', token: Session.token() });
-  load();
+  try {
+    await api('/companies/photo', { method: 'DELETE', token: Session.token() });
+  } catch (err) {
+    alert(`Couldn't remove photo: ${err.message}`);
+  } finally {
+    await load();
+    nav?.refreshAvatar();
+  }
 });
 
 load();
