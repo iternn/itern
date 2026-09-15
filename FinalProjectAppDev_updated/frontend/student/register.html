@@ -93,7 +93,9 @@ function showStep(n) {
 
 document.getElementById('accountForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  draft.name = name.value; draft.email = email.value; draft.password = password.value;
+ draft.name = document.getElementById('name').value;
+ draft.email = document.getElementById('email').value;
+ draft.password = document.getElementById('password').value;
   await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } });
   showStep(2);
 });

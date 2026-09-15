@@ -79,11 +79,11 @@ async function draw() {
 function openModal(p) {
   editingId = p ? p.id : null;
   modalTitle.textContent = p ? 'Edit posting' : 'New posting';
-  title.value = p?.title || '';
-  mode.value = p?.work_mode || 'Remote';
-  capacity.value = p?.capacity || 1;
-  skills.value = p?.skills || '';
-  status.value = p?.status || 'Draft';
+  document.getElementById('title').value = p?.title || '';
+  document.getElementById('mode').value = p?.work_mode || 'Remote';
+  document.getElementById('capacity').value = p?.capacity || 1;
+  document.getElementById('skills').value = p?.skills || '';
+  document.getElementById('status').value = p?.status || 'Draft';
   backdrop.classList.add('open');
 }
 newBtn.addEventListener('click', () => openModal(null));
@@ -92,13 +92,20 @@ cancelBtn.addEventListener('click', () => backdrop.classList.remove('open'));
 postForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const body = {
-    title: title.value, mode: mode.value, capacity: Number(capacity.value),
-    status: status.value, skills: skills.value.split(',').map(s => s.trim()).filter(Boolean),
+    title: document.getElementById('title').value,
+    mode: document.getElementById('mode').value,
+    capacity: Number(document.getElementById('capacity').value),
+    status: document.getElementById('status').value,
+    skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(Boolean),
   };
-  if (editingId) await api(`/postings/${editingId}`, { method: 'PATCH', token: Session.token(), body });
-  else await api('/postings', { method: 'POST', token: Session.token(), body });
-  backdrop.classList.remove('open');
-  draw();
+  try {
+    if (editingId) await api(`/postings/${editingId}`, { method: 'PATCH', token: Session.token(), body });
+    else await api('/postings', { method: 'POST', token: Session.token(), body });
+    backdrop.classList.remove('open');
+    draw();
+  } catch (err) {
+    alert('Could not save posting: ' + err.message);
+  }
 });
 
 draw();

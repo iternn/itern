@@ -1,4 +1,4 @@
-ITern Proficiency Classifier â€” Training Report
+ITern Proficiency Classifier — Training Report
 ==================================================
 Training examples: 432
 Test examples: 108

@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
+const path = require('path');
 const pool = require('../db/pool');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const router = express.Router();
@@ -64,11 +65,15 @@ router.post('/resume', requireAuth, requireRole('intern'), (req, res) => {
     try {
       const r = await fetch(`${process.env.ML_SERVICE_URL}/extract-skills`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ internId: req.user.id, filePath: req.file.path }),
+        body: JSON.stringify({ internId: req.user.id, filePath: path.resolve(req.file.path) }),
       });
-      if (r.ok) await pool.query('UPDATE interns SET resume_parsed_at = NOW() WHERE id = :id', { id: req.user.id });
-    } catch {
-      // ML service not running — resume is still saved, extraction can be retried later.
+      if (r.ok) {
+        await pool.query('UPDATE interns SET resume_parsed_at = NOW() WHERE id = :id', { id: req.user.id });
+      } else {
+        console.error('ML extraction failed:', r.status, await r.text());
+      }
+    } catch (err) {
+      console.error('Could not reach ML service:', err.message);
     }
 
     res.json({ ok: true, fileName: req.file.filename });
