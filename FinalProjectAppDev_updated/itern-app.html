@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ITern — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sidebar-bg:#1a1229; --sidebar-active:#6d4de6; --sidebar-text:#a79cc4; --sidebar-text-dim:#6d6285;
+  --bg:#f4f4f8; --panel:#ffffff; --border:#eceef2;
+  --text:#15141c; --text-dim:#75758a; --text-faint:#a3a3b3;
+  --accent:#6d4de6; --accent-soft:#efeafd;
+  --green:#1f9d55; --green-soft:#e5f8ec; --amber:#a17a12; --amber-soft:#fdf3d9;
+  --blue:#3b6fe0; --blue-soft:#e8eefd; --red:#d3453b; --red-soft:#fbe9e8;
+  --radius:14px;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;background:var(--bg);color:var(--text);padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);}
+.app{display:flex;min-height:100vh;}
+/* Sidebar */
+.sidebar{width:230px;flex-shrink:0;background:var(--sidebar-bg);display:flex;flex-direction:column;padding:20px 14px;}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 22px;}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:#2c2140;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.brand-name{font-weight:700;font-size:16px;color:#fff;}
+.role-switch{display:flex;background:#241a38;border-radius:10px;padding:3px;margin:0 8px 18px;}
+.role-btn{flex:1;border:none;background:transparent;padding:7px 0;font-size:12.5px;font-weight:600;color:var(--sidebar-text);border-radius:8px;cursor:pointer;font-family:inherit;}
+.role-btn.active{background:var(--sidebar-active);color:#fff;}
+.menu-label{font-size:11px;font-weight:600;color:var(--sidebar-text-dim);letter-spacing:.05em;padding:0 10px;margin-bottom:8px;}
+nav.menu{display:flex;flex-direction:column;gap:2px;}
+.menu-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:500;color:var(--sidebar-text);border:none;background:transparent;text-align:left;font-family:inherit;cursor:pointer;width:100%;}
+.menu-item svg{width:17px;height:17px;flex-shrink:0;}
+.menu-item:hover{background:#241a38;color:#fff;}
+.menu-item.active{background:var(--sidebar-active);color:#fff;font-weight:600;}
+.sidebar-footer{margin-top:auto;padding-top:14px;border-top:1px solid #2c2140;display:flex;align-items:center;gap:10px;}
+.avatar-round{width:32px;height:32px;border-radius:50%;background:var(--sidebar-active);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;}
+.sf-name{font-size:13px;font-weight:600;color:#fff;}
+.sf-role{font-size:11.5px;color:var(--sidebar-text-dim);}
+/* Content */
+.content{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{height:60px;flex-shrink:0;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 24px;}
+.search{flex:1;max-width:420px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text-faint);font-size:13.5px;}
+.search svg{width:15px;height:15px;flex-shrink:0;}
+.search kbd{margin-left:auto;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--text-faint);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px;}
+.bell{position:relative;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);color:var(--text-dim);}
+.bell .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--red);border-radius:50%;}
+.user-chip{display:flex;align-items:center;gap:8px;}
+.user-name{font-size:13px;font-weight:600;}
+.user-role{font-size:11px;color:var(--text-faint);}
+main{flex:1;padding:28px 32px 40px;max-width:1180px;width:100%;}
+/* Banner */
+.banner{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:26px 30px;margin-bottom:20px;}
+.eyebrow{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;color:var(--accent);letter-spacing:.05em;margin-bottom:10px;}
+.eyebrow .bar{width:20px;height:4px;border-radius:2px;background:var(--accent);}
+.banner h1{font-size:26px;font-weight:800;margin:0 0 8px;}
+.banner p{font-size:14px;color:var(--text-dim);margin:0;max-width:560px;line-height:1.5;}
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.stat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.stat-icon svg{width:16px;height:16px;}
+.stat-num{font-size:24px;font-weight:800;}
+.stat-label{font-size:13px;color:var(--text-dim);margin-top:2px;}
+.stat-delta{font-size:12px;font-weight:700;color:var(--green);}
+/* Two column */
+.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start;margin-bottom:16px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-head h3{font-size:15px;font-weight:700;margin:0;}
+.card-head a{font-size:13px;color:var(--accent);font-weight:600;text-decoration:none;}
+.rec-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.rec-item:last-child{border-bottom:none;}
+.rec-name{font-size:14px;font-weight:700;margin:0 0 2px;}
+.rec-sub{font-size:12.5px;color:var(--text-dim);margin:0;}
+.match{font-size:13px;font-weight:700;color:var(--accent);margin-right:14px;white-space:nowrap;}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn.block{display:block;width:100%;text-align:center;}
+.donut{width:150px;height:150px;border-radius:50%;margin:6px auto 18px;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--accent) 0 75%, var(--border) 75% 100%);}
+.donut-inner{width:104px;height:104px;background:var(--panel);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.donut-inner b{font-size:20px;}
+.donut-inner span{font-size:11.5px;color:var(--text-dim);}
+.legend{display:flex;flex-direction:column;gap:9px;}
+.legend-row{display:flex;align-items:center;font-size:13px;}
+.legend-row .dot{width:8px;height:8px;border-radius:50%;margin-right:8px;}
+.legend-row span.name{flex:1;color:var(--text-dim);}
+.legend-row b{font-weight:700;}
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.quick-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;gap:12px;align-items:flex-start;}
+.quick-icon{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.quick-card b{font-size:14px;display:block;margin-bottom:2px;}
+.quick-card p{font-size:12.5px;color:var(--text-dim);margin:0;}
+/* tags */
+.tags{display:flex;gap:6px;flex-wrap:wrap;}
+.tag{background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;}
+.pill{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:99px;white-space:nowrap;}
+.pill.applied{background:var(--blue-soft);color:var(--blue);}
+.pill.review{background:var(--amber-soft);color:var(--amber);}
+.pill.interview{background:var(--accent-soft);color:var(--accent);}
+.pill.accepted{background:var(--green-soft);color:var(--green);}
+.pill.rejected{background:var(--red-soft);color:var(--red);}
+/* table */
+.filters{display:flex;gap:10px;margin-bottom:14px;}
+.filters input,.filters select{border:1px solid var(--border);border-radius:9px;padding:9px 12px;font-size:13px;font-family:inherit;background:var(--panel);color:var(--text);}
+.filters .search-in{flex:1;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-size:12px;color:var(--text-faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);}
+td{padding:13px 10px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+.foot-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12.5px;color:var(--text-dim);}
+.pager{display:flex;gap:6px;align-items:center;}
+.pager button{width:26px;height:26px;border-radius:7px;border:1px solid var(--border);background:var(--panel);color:var(--text-dim);cursor:pointer;}
+.pager .num{width:26px;height:26px;border-radius:7px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.stepper{display:flex;align-items:center;margin-top:6px;}
+.step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+.step .circ{width:26px;height:26px;border-radius:50%;background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;z-index:1;}
+.step.done .circ{background:var(--green);color:#fff;}
+.step .line{position:absolute;top:13px;left:50%;width:100%;height:2px;background:var(--border);z-index:0;}
+.step.done .line{background:var(--green);}
+.step:last-child .line{display:none;}
+.step small{margin-top:8px;font-size:12px;font-weight:600;color:var(--text-dim);}
+.step.done small{color:var(--text);}
+/* profile */
+.profile-head{display:flex;align-items:center;gap:14px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--border);}
+.avatar-lg{width:52px;height:52px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.profile-head b{font-size:16px;}
+.profile-head p{margin:2px 0 0;font-size:12.5px;color:var(--text-dim);}
+.skills-label{font-size:11px;color:var(--text-faint);letter-spacing:.05em;margin-bottom:8px;font-weight:600;}
+.progress-track{height:8px;background:var(--border);border-radius:99px;overflow:hidden;margin:10px 0 16px;}
+.progress-fill{height:100%;background:var(--accent);border-radius:99px;}
+.check-row{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:13.5px;}
+.check-row svg{width:15px;height:15px;flex-shrink:0;}
+.textbox{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13.5px;color:var(--text-dim);}
+.dropzone{border:1.5px dashed var(--border);border-radius:12px;padding:34px 20px;text-align:center;}
+.dropzone svg{width:24px;height:24px;color:var(--accent);margin-bottom:10px;}
+.dropzone b{display:block;font-size:13.5px;margin-bottom:3px;}
+.dropzone span{font-size:12px;color:var(--text-faint);}
+.eyebrow-sm{font-size:11px;color:var(--text-faint);letter-spacing:.04em;font-weight:600;margin-top:14px;margin-bottom:4px;}
+.page{display:none;}
+.page.active{display:block;}
+.bar-chart{display:flex;align-items:flex-end;gap:16px;height:150px;padding-top:10px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+.bar-fill{width:100%;max-width:34px;background:var(--accent);border-radius:6px 6px 0 0;}
+.bar-col span{margin-top:8px;font-size:11.5px;color:var(--text-dim);}
+.skillbar{margin-bottom:14px;}
+.skillbar:last-child{margin-bottom:0;}
+.skillbar .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--text-dim);}
+.skillbar .row b{color:var(--text);}
+.res-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.res-item:last-child{border-bottom:none;}
+.res-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.res-item b{font-size:13.5px;display:block;}
+.res-item span{font-size:12px;color:var(--text-dim);}
+@media(max-width:900px){
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .grid2{grid-template-columns:1fr;}
+  .quick-grid{grid-template-columns:1fr;}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:20;transform:translateX(-100%);transition:.2s;}
+  .sidebar.open{transform:translateX(0);box-shadow:0 0 30px rgba(0,0,0,.3);}
+  .menu-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--panel);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .search{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">🎓</div>
+      <div class="brand-name">ITern</div>
+    </div>
+    <div class="role-switch">
+      <button class="role-btn active" id="roleIntern">Intern</button>
+      <button class="role-btn" id="roleCompany">Company</button>
+    </div>
+    <div class="menu-label">MENU</div>
+    <nav class="menu" id="nav-intern">
+      <button class="menu-item active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>Dashboard</button>
+      <button class="menu-item" data-page="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>Profile</button>
+      <button class="menu-item" data-page="verify"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Verify Skills</button>
+      <button class="menu-item" data-page="matches"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Matches</button>
+      <button class="menu-item" data-page="applications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M9 6V4h6v2"/></svg>Applications</button>
+    </nav>
+    <nav class="menu" id="nav-company" style="display:none;">
+      <button class="menu-item active" data-page="c-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg>Dashboard</button>
+      <button class="menu-item" data-page="c-profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>Company Profile</button>
+      <button class="menu-item" data-page="c-postings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M9 6V4h6v2"/></svg>Postings</button>
+      <button class="menu-item" data-page="c-applicants"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>Applicants</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar-round" id="sfAvatar">GP</div>
+      <div><div class="sf-name" id="sfName">Gion Pangan</div><div class="sf-role" id="sfRole">Student</div></div>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Search postings, applicants, or keywords...<kbd>⌘K</kbd></div>
+      <div class="topbar-right">
+        <div class="bell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></div>
+        <div class="user-chip"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)" id="tbAvatar">GP</div><div><div class="user-name" id="tbName">Gion Pangan</div><div class="user-role" id="tbRole">Student</div></div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <main>
+      <!-- DASHBOARD -->
+      <section class="page active" id="page-dashboard">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>WELCOME BACK, GION</div>
+          <h1>Manage your internship journey.</h1>
+          <p>Track applications, discover new matches, and keep your profile sharp so companies notice you.</p>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--blue-soft);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="14" rx="2"/></svg></div><span class="stat-delta">↑ +25%</span></div><div class="stat-num">5</div><div class="stat-label">Applied</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--amber-soft);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/></svg></div><span class="stat-delta">↑ +10%</span></div><div class="stat-num">2</div><div class="stat-label">Under Review</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--accent-soft);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div><span class="stat-delta">↑ +100%</span></div><div class="stat-num">1</div><div class="stat-label">Interview</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><span class="stat-delta">↑ +100%</span></div><div class="stat-num">1</div><div class="stat-label">Accepted</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-head"><h3>Recommended for you</h3><a href="#">See all</a></div>
+            <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">SD</div><div style="flex:1"><p class="rec-name">Software Development Intern</p><p class="rec-sub">ABC Technologies · Manila · Hybrid</p></div><span class="match">92% Match</span><button class="btn">Apply Now</button></div>
+            <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">UX</div><div style="flex:1"><p class="rec-name">UI/UX Design Intern</p><p class="rec-sub">XYZ Solutions · Makati · Hybrid</p></div><span class="match">87% Match</span><button class="btn">Apply Now</button></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Application Progress</h3></div>
+            <div class="donut"><div class="donut-inner"><b>75%</b><span>Complete</span></div></div>
+            <div class="legend">
+              <div class="legend-row"><span class="dot" style="background:var(--accent)"></span><span class="name">Applied</span><b>5</b></div>
+              <div class="legend-row"><span class="dot" style="background:var(--amber)"></span><span class="name">Under Review</span><b>2</b></div>
+              <div class="legend-row"><span class="dot" style="background:var(--blue)"></span><span class="name">Interview</span><b>1</b></div>
+              <div class="legend-row"><span class="dot" style="background:var(--green)"></span><span class="name">Accepted</span><b>1</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="eyebrow-sm" style="margin-top:2px;">QUICK ACTIONS</div>
+        <div class="quick-grid" style="margin-top:8px;">
+          <div class="quick-card"><div class="quick-icon" style="background:var(--blue-soft);color:var(--blue)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div><div><b>Update Resume</b><p>Improve your chances of getting hired</p></div></div>
+          <div class="quick-card"><div class="quick-icon" style="background:var(--green-soft);color:var(--green)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><b>Complete Profile</b><p>Showcase your skills and experience</p></div></div>
+          <div class="quick-card"><div class="quick-icon" style="background:var(--accent-soft);color:var(--accent)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><div><b>Find Internships</b><p>Discover new opportunities</p></div></div>
+        </div>
+      </section>
+
+      <!-- APPLICATIONS -->
+      <section class="page" id="page-applications">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>YOUR APPLICATIONS</div>
+          <h1>Track every application in one place.</h1>
+          <p>See where each internship application stands and what to do next, from applied to final decision.</p>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--blue-soft);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="14" rx="2"/></svg></div><span class="stat-delta">↑ +25%</span></div><div class="stat-num">5</div><div class="stat-label">Total Applications</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--amber-soft);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/></svg></div><span class="stat-delta">↑ +10%</span></div><div class="stat-num">1</div><div class="stat-label">Under Review</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--accent-soft);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div><span class="stat-delta">↑ +100%</span></div><div class="stat-num">1</div><div class="stat-label">Interview</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><span class="stat-delta">↑ +100%</span></div><div class="stat-num">1</div><div class="stat-label">Accepted</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>My Applications</h3></div>
+          <div class="filters">
+            <select><option>All Status</option></select>
+            <input class="search-in" placeholder="Search applications...">
+            <select><option>Sort by</option></select>
+          </div>
+          <table>
+            <thead><tr><th>Company</th><th>Position</th><th>Status</th><th>Applied Date</th></tr></thead>
+            <tbody>
+              <tr><td><b>ABC Technologies</b></td><td>Software Developer Intern</td><td><span class="pill review">Under Review</span></td><td>Sept 10, 2026</td></tr>
+              <tr><td><b>XYZ Corp</b></td><td>UI/UX Design Intern</td><td><span class="pill interview">Interview</span></td><td>Sept 8, 2026</td></tr>
+              <tr><td><b>Tech Solutions</b></td><td>Web Developer Intern</td><td><span class="pill accepted">Accepted</span></td><td>Sept 5, 2026</td></tr>
+              <tr><td><b>Global Tech</b></td><td>Data Analyst Intern</td><td><span class="pill applied">Applied</span></td><td>Sept 3, 2026</td></tr>
+              <tr><td><b>Nimbus Systems</b></td><td>Backend Intern</td><td><span class="pill rejected">Rejected</span></td><td>Aug 28, 2026</td></tr>
+            </tbody>
+          </table>
+          <div class="foot-row"><span>Showing 1–5 of 5 applications</span><div class="pager"><button>‹</button><div class="num">1</div><button>›</button></div></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-head"><h3>Application Progress – ABC Technologies</h3></div>
+          <div class="stepper">
+            <div class="step done"><div class="line"></div><div class="circ">✓</div><small>Applied</small></div>
+            <div class="step done"><div class="line"></div><div class="circ">✓</div><small>Resume Reviewed</small></div>
+            <div class="step"><div class="line"></div><div class="circ">3</div><small>Interview</small></div>
+            <div class="step"><div class="line"></div><div class="circ">4</div><small>Final Decision</small></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section class="page" id="page-profile">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>YOUR PROFILE</div>
+          <h1>Make your profile stand out.</h1>
+          <p>Keep your skills, education, and resume up to date so companies can find the right fit.</p>
+        </div>
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><span class="stat-delta">↑ +5%</span></div><div class="stat-num">80%</div><div class="stat-label">Profile Completion</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--blue-soft);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="14" rx="2"/></svg></div><span class="stat-delta">↑ +2</span></div><div class="stat-num">8</div><div class="stat-label">Skills Added</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--accent-soft);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div><span class="stat-delta">↑ +60%</span></div><div class="stat-num">14</div><div class="stat-label">Profile Views</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="profile-head">
+              <div class="avatar-lg">GP</div>
+              <div><b>Gion Pangan</b><p>BS Information Technology<br>De La Salle University</p></div>
+            </div>
+            <div class="skills-label">SKILLS</div>
+            <div class="tags">
+              <span class="tag">JavaScript</span><span class="tag">React</span><span class="tag">Python</span><span class="tag">Java</span><span class="tag">HTML/CSS</span><span class="tag">SQL</span><span class="tag">Git</span><span class="tag">UI/UX</span>
+            </div>
+            <button class="btn block" style="margin-top:18px;">Edit Profile</button>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Profile Completion</h3><b style="color:var(--accent)">80%</b></div>
+            <div class="progress-track"><div class="progress-fill" style="width:80%"></div></div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Personal Information</div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Education</div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Skills</div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Resume</div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>Work Experience</div>
+          </div>
+        </div>
+        <div class="grid2" style="grid-template-columns:1fr 1fr;">
+          <div class="card"><div class="card-head"><h3>Career Goal</h3></div><div class="textbox">Software engineer, backend-focused</div><div class="eyebrow-sm">EDUCATION</div><p style="font-size:13.5px;margin:0;">BS Information Technology · 2024 – Present</p></div>
+          <div class="card">
+            <div class="card-head"><h3>Resume &amp; Transcript</h3></div>
+            <div class="dropzone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg><b>Upload or drag your resume</b><span>PDF, up to 10MB</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VERIFY SKILLS -->
+      <section class="page" id="page-verify">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>VERIFY SKILLS</div>
+          <h1>Prove what you know.</h1>
+          <p>Take quick assessments to earn verified badges companies can trust.</p>
+        </div>
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div></div><div class="stat-num">3</div><div class="stat-label">Skills Verified</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--accent-soft);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div></div><div class="stat-num">87%</div><div class="stat-label">Avg. Score</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--amber-soft);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 2.9 6.3 6.9.8-5.1 4.6 1.5 6.8L12 17l-6.2 3.5 1.5-6.8-5.1-4.6 6.9-.8Z"/></svg></div></div><div class="stat-num">2</div><div class="stat-label">Badges Earned</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Skill Assessments</h3></div>
+          <div class="res-item"><div class="res-icon" style="background:var(--green-soft);color:var(--green)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div style="flex:1"><b>JavaScript</b><span>Verified · Score 92%</span></div><span class="pill accepted">Verified</span></div>
+          <div class="res-item"><div class="res-icon" style="background:var(--green-soft);color:var(--green)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div><div style="flex:1"><b>Python</b><span>Verified · Score 88%</span></div><span class="pill accepted">Verified</span></div>
+          <div class="res-item"><div class="res-icon" style="background:var(--amber-soft);color:var(--amber)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/></svg></div><div style="flex:1"><b>React</b><span>Not started yet</span></div><button class="btn">Start Test</button></div>
+          <div class="res-item"><div class="res-icon" style="background:var(--amber-soft);color:var(--amber)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/></svg></div><div style="flex:1"><b>SQL</b><span>Not started yet</span></div><button class="btn">Start Test</button></div>
+        </div>
+      </section>
+
+      <!-- MATCHES -->
+      <section class="page" id="page-matches">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>YOUR MATCHES</div>
+          <h1>Internships that fit you.</h1>
+          <p>Ranked by how well your skills and goals line up with each posting.</p>
+        </div>
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--accent-soft);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg></div><span class="stat-delta">↑ +4</span></div><div class="stat-num">14</div><div class="stat-label">New Matches</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--blue-soft);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="14" rx="2"/></svg></div></div><div class="stat-num">31</div><div class="stat-label">Total Matches</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div></div><div class="stat-num">89%</div><div class="stat-label">Avg. Match Score</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Recommended for you</h3></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">SD</div><div style="flex:1"><p class="rec-name">Software Development Intern</p><p class="rec-sub">ABC Technologies · Manila · Hybrid</p></div><span class="match">92% Match</span><button class="btn">Apply Now</button></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">UX</div><div style="flex:1"><p class="rec-name">UI/UX Design Intern</p><p class="rec-sub">XYZ Solutions · Makati · Hybrid</p></div><span class="match">87% Match</span><button class="btn">Apply Now</button></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">DA</div><div style="flex:1"><p class="rec-name">Data Analyst Intern</p><p class="rec-sub">DataWorks PH · Hybrid</p></div><span class="match">82% Match</span><button class="btn">Apply Now</button></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">BE</div><div style="flex:1"><p class="rec-name">Backend Intern</p><p class="rec-sub">Nimbus Systems · Remote</p></div><span class="match">76% Match</span><button class="btn">Apply Now</button></div>
+        </div>
+      </section>
+
+      <!-- COMPANY DASHBOARD -->
+      <section class="page" id="page-c-dashboard">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>WELCOME BACK, TECHNOVA</div>
+          <h1>Manage your hiring pipeline.</h1>
+          <p>Track postings, review applicants, and keep interviews on schedule.</p>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--blue-soft);color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="14" rx="2"/></svg></div><span class="stat-delta">↑ +2</span></div><div class="stat-num">4</div><div class="stat-label">Active Postings</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--accent-soft);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg></div><span class="stat-delta">↑ +18%</span></div><div class="stat-num">42</div><div class="stat-label">Total Applicants</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--amber-soft);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/></svg></div></div><div class="stat-num">6</div><div class="stat-label">Interviews Scheduled</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div></div><div class="stat-num">2</div><div class="stat-label">Positions Filled</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-head"><h3>Top Candidates</h3><a href="#">See all</a></div>
+            <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">JD</div><div style="flex:1"><p class="rec-name">Jia Dela Cruz</p><p class="rec-sub">Frontend Intern · De La Salle U.</p></div><span class="match">95% fit</span><button class="btn">View</button></div>
+            <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">MR</div><div style="flex:1"><p class="rec-name">Miguel Reyes</p><p class="rec-sub">Frontend Intern · Ateneo de Manila</p></div><span class="match">88% fit</span><button class="btn">View</button></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Pipeline</h3></div>
+            <div class="donut"><div class="donut-inner"><b>42</b><span>Applicants</span></div></div>
+            <div class="legend">
+              <div class="legend-row"><span class="dot" style="background:var(--accent)"></span><span class="name">New</span><b>18</b></div>
+              <div class="legend-row"><span class="dot" style="background:var(--amber)"></span><span class="name">Reviewed</span><b>16</b></div>
+              <div class="legend-row"><span class="dot" style="background:var(--blue)"></span><span class="name">Shortlisted</span><b>6</b></div>
+              <div class="legend-row"><span class="dot" style="background:var(--green)"></span><span class="name">Hired</span><b>2</b></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPANY PROFILE -->
+      <section class="page" id="page-c-profile">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>COMPANY PROFILE</div>
+          <h1>Tell interns who you are.</h1>
+          <p>A complete profile helps the right candidates find and trust you.</p>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="profile-head">
+              <div class="avatar-lg">TN</div>
+              <div><b>TechNova Inc.</b><p>Software Development · Manila, PH</p></div>
+            </div>
+            <div class="skills-label">ABOUT</div>
+            <div class="textbox">TechNova builds tools for small businesses across Southeast Asia. We're a 40-person team hiring our first frontend interns this year.</div>
+            <div class="skills-label" style="margin-top:16px;">CULTURE TAGS</div>
+            <div class="tags"><span class="tag">Remote-friendly</span><span class="tag">Mentorship</span><span class="tag">Fast-paced</span></div>
+            <button class="btn block" style="margin-top:18px;">Edit Company Profile</button>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Profile Completion</h3><b style="color:var(--accent)">65%</b></div>
+            <div class="progress-track"><div class="progress-fill" style="width:65%"></div></div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Company Info</div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Logo Uploaded</div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>Culture &amp; Benefits</div>
+            <div class="check-row"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>Team Photos</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPANY POSTINGS -->
+      <section class="page" id="page-c-postings">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>JOB POSTINGS</div>
+          <h1>Manage your internship listings.</h1>
+          <p>Create, edit, and track applicant volume for each posting.</p>
+        </div>
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--green-soft);color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></div></div><div class="stat-num">4</div><div class="stat-label">Active</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--amber-soft);color:var(--amber)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/></svg></div></div><div class="stat-num">1</div><div class="stat-label">Draft</div></div>
+          <div class="stat-card"><div class="stat-top"><div class="stat-icon" style="background:var(--text-faint);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="14" rx="2"/></svg></div></div><div class="stat-num">3</div><div class="stat-label">Closed</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>All Postings</h3><button class="btn">+ New Posting</button></div>
+          <table>
+            <thead><tr><th>Title</th><th>Applicants</th><th>Status</th><th>Posted</th></tr></thead>
+            <tbody>
+              <tr><td><b>Frontend Intern</b></td><td>12</td><td><span class="pill accepted">Active</span></td><td>Sept 1, 2026</td></tr>
+              <tr><td><b>Backend Intern</b></td><td>15</td><td><span class="pill accepted">Active</span></td><td>Aug 28, 2026</td></tr>
+              <tr><td><b>UI/UX Design Intern</b></td><td>9</td><td><span class="pill accepted">Active</span></td><td>Aug 20, 2026</td></tr>
+              <tr><td><b>Data Analyst Intern</b></td><td>6</td><td><span class="pill applied">Draft</span></td><td>—</td></tr>
+              <tr><td><b>QA Intern</b></td><td>3</td><td><span class="pill rejected">Closed</span></td><td>Jul 12, 2026</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- COMPANY APPLICANTS -->
+      <section class="page" id="page-c-applicants">
+        <div class="banner">
+          <div class="eyebrow"><span class="bar"></span>APPLICANTS</div>
+          <h1>Ranked by fit for Frontend Intern.</h1>
+          <p>12 applicants for this posting, sorted by match score.</p>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Applicants</h3></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">JD</div><div style="flex:1"><p class="rec-name">Jia Dela Cruz</p><p class="rec-sub">BS Computer Science · De La Salle U.</p><div class="tags" style="margin-top:6px;"><span class="tag">Java</span><span class="tag">Python</span><span class="tag">SQL</span></div></div><span class="pill applied">New</span><span class="match">95%</span></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">MR</div><div style="flex:1"><p class="rec-name">Miguel Reyes</p><p class="rec-sub">BS Info Tech · Ateneo de Manila</p><div class="tags" style="margin-top:6px;"><span class="tag">JavaScript</span><span class="tag">React</span><span class="tag">CSS</span></div></div><span class="pill review">Reviewed</span><span class="match">88%</span></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">AS</div><div style="flex:1"><p class="rec-name">Anna Santos</p><p class="rec-sub">BS Computer Science · UP Diliman</p><div class="tags" style="margin-top:6px;"><span class="tag">Python</span><span class="tag">SQL</span><span class="tag">Django</span></div></div><span class="pill accepted">Shortlisted</span><span class="match">84%</span></div>
+          <div class="rec-item"><div class="avatar-round" style="background:var(--accent-soft);color:var(--accent)">KL</div><div style="flex:1"><p class="rec-name">Kyle Lim</p><p class="rec-sub">BS Info Tech · FEU Tech</p><div class="tags" style="margin-top:6px;"><span class="tag">JavaScript</span><span class="tag">Node.js</span></div></div><span class="pill applied">New</span><span class="match">71%</span></div>
+        </div>
+      </section>
+
+      <!-- STUB -->
+      <section class="page" id="page-stub"><div class="banner"><div class="eyebrow"><span class="bar"></span>COMING SOON</div><h1>This section isn't built yet.</h1><p>Ask for a screenshot or a description and I'll build it out.</p></div></section>
+    </main>
+  </div>
+</div>
+
+<script>
+const map = {
+  dashboard:'page-dashboard', profile:'page-profile', verify:'page-verify', matches:'page-matches', applications:'page-applications',
+  'c-dashboard':'page-c-dashboard', 'c-profile':'page-c-profile', 'c-postings':'page-c-postings', 'c-applicants':'page-c-applicants'
+};
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function wireNav(navEl){
+  navEl.querySelectorAll('.menu-item').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      navEl.querySelectorAll('.menu-item').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      showPage(map[btn.dataset.page] || 'page-stub');
+      if(window.innerWidth<=900) document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+}
+const navIntern = document.getElementById('nav-intern');
+const navCompany = document.getElementById('nav-company');
+wireNav(navIntern);
+wireNav(navCompany);
+
+document.getElementById('roleIntern').addEventListener('click', function(){
+  this.classList.add('active');
+  document.getElementById('roleCompany').classList.remove('active');
+  navCompany.style.display='none';
+  navIntern.style.display='flex';
+  navIntern.querySelector('.menu-item').click();
+  document.getElementById('sfAvatar').textContent='GP';
+  document.getElementById('sfName').textContent='Gion Pangan';
+  document.getElementById('sfRole').textContent='Student';
+  document.getElementById('tbAvatar').textContent='GP';
+  document.getElementById('tbName').textContent='Gion Pangan';
+  document.getElementById('tbRole').textContent='Student';
+});
+document.getElementById('roleCompany').addEventListener('click', function(){
+  this.classList.add('active');
+  document.getElementById('roleIntern').classList.remove('active');
+  navIntern.style.display='none';
+  navCompany.style.display='flex';
+  navCompany.querySelector('.menu-item').click();
+  document.getElementById('sfAvatar').textContent='TN';
+  document.getElementById('sfName').textContent='TechNova Inc.';
+  document.getElementById('sfRole').textContent='Company';
+  document.getElementById('tbAvatar').textContent='TN';
+  document.getElementById('tbName').textContent='TechNova Inc.';
+  document.getElementById('tbRole').textContent='Company';
+});
+
+const menuBtn=document.getElementById('menuBtn');
+if(menuBtn) menuBtn.addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+</script>
+</body>
+</html>
