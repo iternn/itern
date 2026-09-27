@@ -13,8 +13,10 @@
   <div class="app-shell">
     <div id="navMount"></div>
     <main class="main">
-      <div class="page-head">
-        <div><h1 id="greeting">Welcome</h1><p>Here's where to pick up.</p></div>
+      <div class="page-banner">
+        <div class="eyebrow"><span class="bar"></span>WELCOME BACK</div>
+        <h1 id="greeting">Welcome</h1>
+        <p>Here's where to pick up on your internship search.</p>
       </div>
       <div class="stat-grid" id="statGrid">
         <div class="stat-card"><div class="value" id="statApplied">–</div><div class="label">Active applications</div></div>
@@ -22,11 +24,18 @@
         <div class="stat-card"><div class="value" id="statSkills">–</div><div class="label">Skills on profile</div></div>
         <div class="stat-card"><div class="value" id="statTopMatch">–</div><div class="label">Top match score</div></div>
       </div>
-      <div class="quick-grid">
-        <a class="card" href="profile.html"><h3>Profile</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Update skills and your resume</p></a>
-        <a class="card" href="skills-test.html"><h3>Verify Skills</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Confirm a resume-claimed skill is real</p></a>
-        <a class="card" href="matches.html"><h3>Matches</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">See ranked internships</p></a>
-        <a class="card" href="applications.html"><h3>Applications</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Track your pipeline</p></a>
+      <div class="dash-grid">
+        <div class="quick-grid">
+          <a class="card" href="profile.html"><h3>Profile</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Update skills and your resume</p></a>
+          <a class="card" href="skills-test.html"><h3>Verify Skills</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Confirm a resume-claimed skill is real</p></a>
+          <a class="card" href="matches.html"><h3>Matches</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">See ranked internships</p></a>
+          <a class="card" href="applications.html"><h3>Applications</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Track your pipeline</p></a>
+        </div>
+        <div class="card pipeline-card">
+          <h3 style="margin-bottom:4px;">Application Progress</h3>
+          <div class="donut" id="pipelineDonut"><div class="donut-inner"><b id="pipelinePct">0%</b><span>Complete</span></div></div>
+          <div class="pipeline-legend" id="pipelineLegend"></div>
+        </div>
       </div>
     </main>
   </div>
@@ -39,6 +48,13 @@ const user = Session.get();
 if (!user) window.location.href = 'login.html';
 else greeting.textContent = `Welcome, ${user.name.split(' ')[0]}`;
 
+const STAGES = [
+  { key: 'Applied', color: 'var(--violet-500)' },
+  { key: 'Waitlisted', color: 'var(--amber-500, #C9922B)' },
+  { key: 'Interviewing', color: 'var(--sky-500, #3B6FE0)' },
+  { key: 'Offer', color: 'var(--mint-500, #1F9D55)' },
+];
+
 async function loadStats() {
   try {
     const [me, apps] = await Promise.all([
@@ -50,9 +66,29 @@ async function loadStats() {
     statInterviews.textContent = apps.filter(a => a.status === 'Interviewing' && a.scheduled_at).length;
     statSkills.textContent = me.skills.length;
     statTopMatch.textContent = apps.length ? Math.max(...apps.map(a => a.match_score)) + '%' : '—';
+    drawPipeline(apps);
   } catch {
     // Any single stat failing shouldn't break the page — leave dashes in place.
   }
+}
+
+function drawPipeline(apps) {
+  const total = apps.length;
+  const offerCount = apps.filter(a => a.status === 'Offer').length;
+  const pct = total ? Math.round((offerCount / total) * 100) : 0;
+  pipelinePct.textContent = pct + '%';
+  let acc = 0;
+  const stops = STAGES.map(s => {
+    const count = apps.filter(a => a.status === s.key).length;
+    const share = total ? (count / total) * 100 : 0;
+    const from = acc; acc += share;
+    return `${s.color} ${from}% ${acc}%`;
+  }).join(', ');
+  pipelineDonut.style.background = total ? `conic-gradient(${stops})` : 'var(--ink-100)';
+  pipelineLegend.innerHTML = STAGES.map(s => {
+    const count = apps.filter(a => a.status === s.key).length;
+    return `<div class="row"><span class="dot" style="background:${s.color}"></span><span class="name">${s.key}</span><b>${count}</b></div>`;
+  }).join('');
 }
 loadStats();
 </script>
