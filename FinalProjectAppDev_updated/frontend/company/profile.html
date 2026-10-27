@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/base.css">
 <style>
-  .content { max-width: 700px; }
   .avatar-editor { display:flex; align-items:center; gap:18px; margin-bottom:20px; }
   .avatar-editor .preview {
     width:88px; height:88px; border-radius:50%; object-fit:cover; background:var(--violet-100);
@@ -20,9 +19,17 @@
 <body>
   <div class="app-shell">
     <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
     <main class="main">
       <div class="content">
-      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>COMPANY PROFILE</div><h1>Company Profile</h1><p>A complete profile helps the right candidates find and trust you.</p></div>
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>COMPANY PROFILE</div><h1>Tell interns who you are.</h1><p>A complete profile helps the right candidates find and trust you.</p></div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-head"><h3>Profile Completion</h3><b style="color:var(--violet-600);" id="completePct">0%</b></div>
+        <div class="progress-bar" style="margin-bottom:12px;"><div class="fill" id="completeFill" style="width:0%"></div></div>
+        <div id="checklist"></div>
+      </div>
 
       <div class="card" style="margin-bottom:20px;">
         <h3 style="margin-bottom:14px;">Profile picture</h3>
@@ -44,13 +51,13 @@
       </div>
       </div>
     </main>
+    </div>
   </div>
 
 <script type="module">
-import { api, Session, API_BASE } from '../assets/js/api.js';
-import { renderNav } from '../assets/js/nav.js';
+import { api, Session, API_BASE, assetUrl } from '../assets/js/api.js';
+import { renderNav, icon, toast } from '../assets/js/nav.js';
 const nav = renderNav('company', 'profile');
-const ORIGIN = API_BASE.replace('/api', '');
 
 async function load() {
   try {
@@ -58,17 +65,29 @@ async function load() {
     industry.value = me.industry || '';
     about.value = me.about || '';
     renderPhoto(me);
+    drawCompletion(me);
   } catch (err) {
-    // Most common cause: the profile_photo_path migration hasn't been run
-    // yet, which makes the GET /companies/me query throw on the server —
-    // surfacing this beats leaving the form silently blank.
-    alert(`Couldn't load your profile: ${err.message}\n\nIf this mentions profile_photo_path, run backend/db/migration_2026-09.sql against your database and restart the backend.`);
+    toast(`Couldn't load your profile: ${err.message}`);
   }
+}
+
+function drawCompletion(me) {
+  const items = [
+    ['Company name', !!me.name],
+    ['Industry', !!(me.industry || '').trim()],
+    ['About / description', !!(me.about || '').trim()],
+    ['Logo or profile picture', !!me.profile_photo_path],
+  ];
+  const pct = Math.round(items.filter(i => i[1]).length / items.length * 100);
+  completePct.textContent = pct + '%';
+  completeFill.style.width = pct + '%';
+  checklist.innerHTML = items.map(([label, ok]) =>
+    `<div class="check-row ${ok ? 'ok' : 'todo'}">${icon(ok ? 'check' : 'alert', 15)}${label}</div>`).join('');
 }
 
 function renderPhoto(me) {
   if (me.profile_photo_path) {
-    photoPreview.src = `${ORIGIN}/${me.profile_photo_path}`;
+    photoPreview.src = assetUrl(me.profile_photo_path);
     photoPreview.style.display = 'block';
     photoFallback.style.display = 'none';
     removePhotoBtn.style.display = 'inline-flex';
@@ -83,10 +102,11 @@ function renderPhoto(me) {
 saveBtn.addEventListener('click', async () => {
   try {
     await api('/companies/me', { method: 'PATCH', token: Session.token(), body: { industry: industry.value, about: about.value } });
+    drawCompletion({ name: true, industry: industry.value, about: about.value, profile_photo_path: photoPreview.style.display === 'block' });
     saveBtn.textContent = 'Saved ✓';
     setTimeout(() => saveBtn.textContent = 'Save changes', 1500);
   } catch (err) {
-    alert(`Couldn't save: ${err.message}`);
+    toast(`Couldn't save: ${err.message}`);
   }
 });
 
@@ -104,7 +124,7 @@ photoInput.addEventListener('change', async (e) => {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
   } catch (err) {
-    alert(`Couldn't upload photo: ${err.message}`);
+    toast(`Couldn't upload photo: ${err.message}`);
   } finally {
     photoInput.value = '';
     await load();
@@ -116,7 +136,7 @@ removePhotoBtn.addEventListener('click', async () => {
   try {
     await api('/companies/photo', { method: 'DELETE', token: Session.token() });
   } catch (err) {
-    alert(`Couldn't remove photo: ${err.message}`);
+    toast(`Couldn't remove photo: ${err.message}`);
   } finally {
     await load();
     nav?.refreshAvatar();

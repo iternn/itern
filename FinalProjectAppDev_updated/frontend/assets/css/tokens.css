@@ -45,4 +45,10 @@
   --ease-spring: cubic-bezier(.34,1.56,.64,1);
   --dur-fast: 140ms;
   --dur-base: 260ms;
+
+  /* status tones (from the itern-app design) */
+  --blue-500: #3B6FE0;  --blue-50: #E8EEFD;
+  --green-600: #1F9D55; --green-50: #E5F8EC;
+  --amber-700: #A17A12; --amber-50: #FDF3D9;
+  --rose-50: #FBE9E8;
 }

@@ -7,19 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/auth.css">
 </head>
 <body>
   <div class="auth-shell">
     <section class="auth-visual">
-      <h2>Build a profile companies actually trust.</h2>
-      <div class="float-card">
-        <div style="font-size:12px;color:var(--ink-500);font-weight:600;margin-bottom:10px;">Verified skills</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <span class="badge badge-strong">Python · 88%</span>
-          <span class="badge badge-good">SQL · 76%</span>
-          <span class="badge badge-neutral">Java · 64%</span>
-        </div>
-      </div>
+      <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+      <div class="ring r1"></div><div class="ring r2"></div>
+      <div class="sparks"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <h2>Build a profile companies actually trust.</h2>
+      <p class="tagline">Take skill tests, upload your resume and let companies find you.</p>
     </section>
     <section class="auth-form-side">
       <div class="inner">
@@ -39,7 +36,7 @@
 
         <div id="step2" class="step-hidden">
           <h1>Verify your email</h1>
-          <p class="sub">Step 2 of 4 — check the backend terminal for the code</p>
+          <p class="sub">Step 2 of 4 — we sent a 6-digit code to <b id="sentTo"></b></p>
           <form id="otpForm">
             <div class="otp-row">
               <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
@@ -48,13 +45,14 @@
             <div class="error-text" id="otpErr">That code isn't right.</div>
             <button class="btn btn-primary btn-block" type="submit">Verify &amp; continue</button>
           </form>
+          <p class="auth-footnote" style="margin-top:14px;">Didn't get it? Check spam, or <a class="link" href="#" id="resendLink">resend code</a></p>
         </div>
 
         <div id="step3" class="step-hidden">
           <h1>Verify you're a student</h1>
           <p class="sub">Step 3 of 4</p>
           <form id="studentForm">
-            <div class="field"><label>School</label><input class="input" id="school" required></div>
+            <div class="field"><label>School</label><input class="input" id="school" list="schoolList" required autocomplete="off"><datalist id="schoolList"></datalist></div>
             <div class="field"><label>Program / year</label><input class="input" id="program" required></div>
             <button class="btn btn-primary btn-block" type="submit">Continue</button>
           </form>
@@ -63,12 +61,12 @@
         <div id="step4" class="step-hidden">
           <h1>Almost done</h1>
           <p class="sub">Step 4 of 4 — add skills and a resume after logging in, on your Profile page</p>
-          <a class="card" href="../assets/files/ITern_Resume_Template.pdf" download
+          <a class="card" href="../assets/files/ITern_Resume_Template.docx" download
              style="display:flex;align-items:center;gap:12px;text-decoration:none;margin-bottom:20px;padding:14px 16px;">
             <span style="font-size:20px;">&#128196;</span>
             <span>
-              <span style="display:block;font-weight:700;font-size:13.5px;color:var(--ink-900);">Download resume template (PDF)</span>
-              <span style="display:block;font-size:12px;color:var(--ink-500);">Fill it in, save as PDF, and upload it on your Profile page</span>
+              <span style="display:block;font-weight:700;font-size:13.5px;color:var(--ink-900);">Download resume template (Word)</span>
+              <span style="display:block;font-size:12px;color:var(--ink-500);">Fill it in, save it as a PDF, and upload it on your Profile page</span>
             </span>
           </a>
           <form id="profileForm">
@@ -81,9 +79,13 @@
     </section>
   </div>
 
+<script src="../assets/js/auth-fx.js"></script>
 <script type="module">
 import { api, Session } from '../assets/js/api.js';
+import { alertDialog } from '../assets/js/dialog.js';
 let draft = {};
+// suggest schools that already have an OJT coordinator, so names match exactly
+api('/schools').then(list => { document.getElementById('schoolList').innerHTML = list.map(n => `<option value="${n.replace(/"/g, '&quot;')}">`).join(''); }).catch(() => {});
 
 const dots = document.querySelectorAll('#stepDots span');
 function showStep(n) {
@@ -91,13 +93,29 @@ function showStep(n) {
   dots.forEach((d, i) => d.classList.toggle('done', i < n));
 }
 
+async function sendCode() {
+  await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } });
+}
+
 document.getElementById('accountForm').addEventListener('submit', async (e) => {
   e.preventDefault();
- draft.name = document.getElementById('name').value;
- draft.email = document.getElementById('email').value;
- draft.password = document.getElementById('password').value;
-  await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } });
-  showStep(2);
+  draft.name = document.getElementById('name').value.trim();
+  draft.email = document.getElementById('email').value.trim().toLowerCase();
+  draft.password = document.getElementById('password').value;
+  try {
+    await sendCode();
+    document.getElementById('sentTo').textContent = draft.email;
+    showStep(2);
+  } catch (err) {
+    alertDialog('Could not send verification code: ' + err.message);
+    document.querySelectorAll('.btn.loading').forEach(b => b.classList.remove('loading'));
+  }
+});
+
+document.getElementById('resendLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  try { await sendCode(); otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled'); }); otpInputs[0].focus(); alertDialog('A new code was sent to ' + draft.email); }
+  catch (err) { alertDialog(err.message); }
 });
 
 const otpInputs = [...document.querySelectorAll('.otp-row input')];
@@ -112,7 +130,9 @@ document.getElementById('otpForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const code = otpInputs.map(i => i.value).join('');
   try {
-    await api('/auth/otp/verify', { method: 'POST', body: { email: draft.email, code, purpose: 'register' } });
+    const r = await api('/auth/otp/verify', { method: 'POST', body: { email: draft.email, code, purpose: 'register' } });
+    draft.verificationToken = r.verificationToken;
+    otpErr.classList.remove('show');
     showStep(3);
   } catch (err) {
     otpErr.textContent = err.message;
@@ -128,9 +148,14 @@ document.getElementById('studentForm').addEventListener('submit', (e) => {
 
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const { user, token } = await api('/auth/register/intern', { method: 'POST', body: draft });
-  Session.set(user, token);
-  window.location.href = 'dashboard.html';
+  try {
+    const { user, token } = await api('/auth/register/intern', { method: 'POST', body: draft });
+    Session.set(user, token);
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    alertDialog('Registration failed: ' + err.message);
+    document.querySelectorAll('.btn.loading').forEach(b => b.classList.remove('loading'));
+  }
 });
 </script>
 </body>

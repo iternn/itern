@@ -7,17 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/auth.css">
 </head>
 <body>
   <div class="auth-shell">
     <section class="auth-visual">
-      <h2>Post once. Meet students who already fit.</h2>
-      <div class="float-card">
-        <div style="font-size:12px;color:var(--ink-500);font-weight:600;margin-bottom:10px;">Frontend Intern</div>
-        <div style="display:flex;justify-content:space-between;font-size:12.5px;">
-          <span>3 applicants</span><span style="color:var(--mint-600);font-weight:700;">2 strong matches</span>
-        </div>
-      </div>
+      <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+      <div class="ring r1"></div><div class="ring r2"></div>
+      <div class="sparks"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <h2>Post once. Meet students who already fit.</h2>
+      <p class="tagline">Create a posting in minutes and see skill-based matches instantly.</p>
     </section>
     <section class="auth-form-side">
       <div class="inner">
@@ -38,7 +37,7 @@
 
         <div id="step2" class="step-hidden">
           <h1>Verify your work email</h1>
-          <p class="sub">Step 2 of 2 — check the backend terminal for the code</p>
+          <p class="sub">Step 2 of 2 — we sent a 6-digit code to <b id="sentTo"></b></p>
           <form id="otpForm">
             <div class="otp-row">
               <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
@@ -47,29 +46,34 @@
             <div class="error-text" id="otpErr">That code isn't right.</div>
             <button class="btn btn-primary btn-block" type="submit">Verify &amp; create account</button>
           </form>
+          <p class="auth-footnote" style="margin-top:14px;">Didn't get it? Check spam, or <a class="link" href="#" id="resendLink">resend code</a></p>
         </div>
         <p class="auth-footnote">Already have an account? <a class="link" href="login.html">Log in</a></p>
       </div>
     </section>
   </div>
 
+<script src="../assets/js/auth-fx.js"></script>
 <script type="module">
 import { api, Session } from '../assets/js/api.js';
+import { alertDialog } from '../assets/js/dialog.js';
 let draft = {};
 
 document.getElementById('accountForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   draft = {
     name: document.getElementById('name').value,
-    email: document.getElementById('email').value,
+    email: document.getElementById('email').value.trim().toLowerCase(),
     password: document.getElementById('password').value,
     industry: document.getElementById('industry').value,
   };
   try {
     await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } });
+    document.getElementById('sentTo').textContent = draft.email;
     step1.classList.add('step-hidden'); step2.classList.remove('step-hidden'); d2.classList.add('done');
   } catch (err) {
-    alert('Could not send verification code: ' + err.message);
+    alertDialog('Could not send verification code: ' + err.message);
+    document.querySelectorAll('.btn.loading').forEach(b => b.classList.remove('loading'));
   }
 });
 
@@ -81,11 +85,22 @@ otpInputs.forEach((inp, i) => {
   });
 });
 
+document.getElementById('resendLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } });
+    otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled'); }); otpInputs[0].focus();
+    alertDialog('A new code was sent to ' + draft.email);
+  } catch (err) { alertDialog(err.message); }
+});
+
 document.getElementById('otpForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const code = otpInputs.map(i => i.value).join('');
   try {
-    await api('/auth/otp/verify', { method: 'POST', body: { email: draft.email, code, purpose: 'register' } });
+    const r = await api('/auth/otp/verify', { method: 'POST', body: { email: draft.email, code, purpose: 'register' } });
+    draft.verificationToken = r.verificationToken;
+    otpErr.classList.remove('show');
   } catch (err) {
     otpErr.textContent = err.message;
     otpErr.classList.add('show');
@@ -96,7 +111,7 @@ document.getElementById('otpForm').addEventListener('submit', async (e) => {
     Session.set(user, token);
     window.location.href = 'dashboard.html';
   } catch (err) {
-    alert('Registration failed: ' + err.message);
+    alertDialog('Registration failed: ' + err.message);
     console.error('Registration error:', err);
   }
 });

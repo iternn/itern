@@ -10,6 +10,9 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   namedPlaceholders: true,
+  // DATE columns (internship start/end, deadline) as plain 'YYYY-MM-DD' text, so a date never
+  // shifts by a day depending on the server / browser timezone. DATETIME columns are unchanged.
+  dateStrings: ['DATE'],
 });
  
 module.exports = pool;

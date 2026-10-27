@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Messages · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/messages.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
+    <main class="main">
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>MESSAGES</div><h1>Talk directly with companies.</h1><p>Ask questions, share updates, and get interview details from the companies you applied to.</p></div>
+      <div id="chatMount"></div>
+    </main>
+    </div>
+  </div>
+
+<script type="module">
+import { renderNav } from '../assets/js/nav.js';
+import { mountMessages } from '../assets/js/messages.js';
+renderNav('student', 'messages');
+mountMessages({ portal: 'student', root: document.getElementById('chatMount') });
+</script>
+</body>
+</html>

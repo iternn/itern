@@ -145,22 +145,74 @@ _LEVEL_MAP = {"Beginner": 35, "Intermediate": 65, "Advanced": 88}
 # table grows.
 # --------------------------------------------------------------------------
 SKILL_ALIASES = {
+    # --- core skills (as before) ---
     "javascript": "JavaScript", "js": "JavaScript",
     "react": "React", "react.js": "React", "reactjs": "React",
-    "css": "CSS", "sass": "CSS", "tailwind": "CSS",
-    "python": "Python", "django": "Python", "flask": "Python",
-    "sql": "SQL", "mysql": "SQL", "postgresql": "SQL", "postgres": "SQL",
+    "css": "CSS", "css3": "CSS",
+    "python": "Python",
+    "sql": "SQL",
     "excel": "Excel", "spreadsheets": "Excel",
-    "java": "Java", "spring boot": "Spring Boot", "spring": "Spring Boot",
+    "java": "Java", "spring boot": "Spring Boot",
     "c++": "C++", "cpp": "C++",
-    "node.js": "Node.js", "node": "Node.js", "express": "Node.js",
-    "docker": "Docker", "kubernetes": "Docker",
-    "aws": "AWS", "amazon web services": "AWS", "azure": "AWS", "gcp": "AWS",
+    "node.js": "Node.js", "nodejs": "Node.js", "node": "Node.js",
+    "docker": "Docker", "aws": "AWS", "amazon web services": "AWS",
     "system design": "System design", "distributed systems": "System design",
-    "figma": "Figma", "sketch": "Figma",
-    "prototyping": "Prototyping", "wireframing": "Prototyping",
-    "git": "Git", "github": "Git",
+    "figma": "Figma", "sketch app": "Figma",
+    "prototyping": "Prototyping", "wireframing": ("Prototyping", "Wireframing"),
+    "git": "Git",
+    # --- one mention can add a specific skill AND its parent skill (so postings asking for either match) ---
+    "django": ("Python", "Django"), "flask": ("Python", "Flask"),
+    "mysql": ("SQL", "MySQL"), "postgresql": ("SQL", "PostgreSQL"), "postgres": ("SQL", "PostgreSQL"),
+    "sass": ("CSS", "Sass"), "tailwind": ("CSS", "Tailwind CSS"), "tailwind css": ("CSS", "Tailwind CSS"),
+    "kubernetes": ("Docker", "Kubernetes"),
+    "azure": ("AWS", "Azure"), "gcp": ("AWS", "Google Cloud"), "google cloud": ("AWS", "Google Cloud"),
+    "express.js": ("Node.js", "Express.js"), "expressjs": ("Node.js", "Express.js"),
+    "github": ("Git", "GitHub"),
+    # --- languages ---
+    "typescript": "TypeScript", "php": "PHP", "kotlin": "Kotlin", "ruby": "Ruby", "scala": "Scala", "dart": "Dart",
+    "rust": "Rust", "golang": "Go", "bash": "Bash", "powershell": "PowerShell", "matlab": "MATLAB", "c#": "C#",
+    # --- web / backend ---
+    "html": "HTML", "html5": "HTML", "vue": "Vue.js", "vue.js": "Vue.js", "vuejs": "Vue.js", "angular": "Angular",
+    "next.js": "Next.js", "nextjs": "Next.js", "jquery": "jQuery", "bootstrap": "Bootstrap", "redux": "Redux",
+    "fastapi": "FastAPI", "laravel": "Laravel", ".net": ".NET", "asp.net": "ASP.NET",
+    "rest api": "REST APIs", "rest apis": "REST APIs", "restful": "REST APIs", "graphql": "GraphQL",
+    "microservices": "Microservices", "responsive design": "Responsive Design",
+    # --- mobile ---
+    "flutter": "Flutter", "react native": "React Native", "firebase": "Firebase",
+    "android development": "Android Development", "ios development": "iOS Development",
+    # --- data / AI ---
+    "mongodb": "MongoDB", "sqlite": "SQLite", "redis": "Redis", "nosql": "NoSQL",
+    "pandas": "Pandas", "numpy": "NumPy", "power bi": "Power BI", "tableau": "Tableau",
+    "machine learning": "Machine Learning", "deep learning": "Deep Learning", "tensorflow": "TensorFlow",
+    "pytorch": "PyTorch", "scikit-learn": "Scikit-learn", "sklearn": "Scikit-learn",
+    "natural language processing": "Natural Language Processing", "nlp": "Natural Language Processing",
+    "computer vision": "Computer Vision", "data analysis": "Data Analysis", "data structures": "Data Structures",
+    "algorithms": "Algorithms", "data visualization": "Data Visualization", "data mining": "Data Mining", "etl": "ETL",
+    # --- devops / infra / security / QA ---
+    "gitlab": "GitLab", "linux": "Linux", "ci/cd": "CI/CD", "jenkins": "Jenkins", "nginx": "Nginx",
+    "networking": "Networking", "cybersecurity": "Cybersecurity", "penetration testing": "Penetration Testing",
+    "unit testing": "Unit Testing", "software testing": "Software Testing", "quality assurance": "Quality Assurance",
+    "selenium": "Selenium", "jest": "Jest", "postman": "Postman",
+    # --- design ---
+    "photoshop": "Adobe Photoshop", "illustrator": "Adobe Illustrator", "adobe xd": "Adobe XD", "canva": "Canva",
+    "ui design": "UI Design", "ux design": "UX Design", "ui/ux": ("UI Design", "UX Design"),
+    "graphic design": "Graphic Design", "video editing": "Video Editing", "premiere pro": "Adobe Premiere Pro",
+    # --- office / business ---
+    "microsoft word": "Microsoft Word", "powerpoint": "PowerPoint", "google workspace": "Google Workspace",
+    "microsoft office": "Microsoft Office", "data entry": "Data Entry", "bookkeeping": "Bookkeeping",
+    "accounting": "Accounting", "technical writing": "Technical Writing", "content writing": "Content Writing",
+    "copywriting": "Copywriting", "social media": "Social Media Management", "digital marketing": "Digital Marketing",
+    "seo": "SEO", "customer service": "Customer Service", "project management": "Project Management",
+    "agile": "Agile", "scrum": "Scrum", "jira": "Jira", "trello": "Trello",
+    # --- general ---
+    "object-oriented programming": "Object-Oriented Programming", "oop": "Object-Oriented Programming",
+    "version control": "Version Control", "web development": "Web Development",
+    "mobile development": "Mobile Development", "game development": "Game Development",
+    "arduino": "Arduino", "raspberry pi": "Raspberry Pi", "iot": "IoT",
 }
+# Deliberately NOT auto-detected, because the word is too common in ordinary sentences (it would create false
+# skills): "go", "c", "r", "swift", "unity", "oracle", "spring", "express", "research", "leadership", ...
+# Students can still add those by hand on the Profile page.
 
 
 def extract_text(pdf_path: str) -> str:
@@ -169,32 +221,49 @@ def extract_text(pdf_path: str) -> str:
     return text.lower()
 
 
+def _targets(value):
+    return (value,) if isinstance(value, str) else tuple(value)
+
+
 def extract_skills(text: str):
-    found = set()
-    for alias, canonical in SKILL_ALIASES.items():
-        pattern = r"(?<![a-z0-9])" + re.escape(alias) + r"(?![a-z0-9])"
-        if re.search(pattern, text):
-            found.add(canonical)
-    return sorted(found)
+    """Names of the skills mentioned anywhere in the resume text."""
+    return sorted(extract_skill_levels(text, with_levels=False))
 
 
 def estimate_level(text: str, skill: str) -> int:
-    """Proficiency estimate for a mentioned skill, using the trained
-    classifier (pure-Python inference, see above) on the text window
-    surrounding the mention. Falls back to a keyword heuristic only if the
-    exported model file is missing."""
-    window = 80
+    """Level for the FIRST mention of `skill` (kept for backwards compatibility; the endpoint now uses
+    extract_skill_levels, which looks at every mention)."""
     idx = text.find(skill.lower())
-    context = text[max(0, idx - window): idx + window] if idx > -1 else skill
+    context = text[max(0, idx - 80): idx + 80] if idx > -1 else skill
+    return _level_for_context(context)
 
+
+def _level_for_context(context: str) -> int:
     if _PROF_MODEL is not None:
         return _LEVEL_MAP[_predict_proficiency(context)]
-
     if any(w in context for w in ["led", "senior", "advanced", "3+ years", "expert"]):
         return 85
     if any(w in context for w in ["intermediate", "familiar", "2 years", "used"]):
         return 65
     return 55
+
+
+def extract_skill_levels(text: str, with_levels: bool = True):
+    """{skill: level}. Every mention of every alias is classified from the ~80 characters around it, and a skill
+    keeps its HIGHEST level. So "Skills: Python" (Beginner) no longer hides "Built an API with Python" further
+    down (Intermediate) - the strongest evidence in the resume wins."""
+    window = 80
+    found = {}
+    for alias, value in SKILL_ALIASES.items():
+        pattern = r"(?<![a-z0-9])" + re.escape(alias) + r"(?![a-z0-9])"
+        for m in re.finditer(pattern, text):
+            level = _level_for_context(text[max(0, m.start() - window): m.end() + window]) if with_levels else 0
+            for skill in _targets(value):
+                if level > found.get(skill, -1):
+                    found[skill] = level
+            if not with_levels:
+                break  # one hit is enough when we only need the names
+    return found
 
 
 class ExtractRequest(BaseModel):
@@ -208,12 +277,13 @@ def extract_skills_endpoint(req: ExtractRequest):
         raise HTTPException(404, f"Resume file not found at {req.filePath}")
 
     text = extract_text(req.filePath)
-    skills = extract_skills(text)
+    levels = extract_skill_levels(text)
+    skills = sorted(levels)
 
     conn = db()
     cur = conn.cursor()
     for skill in skills:
-        level = estimate_level(text, skill)
+        level = levels[skill]
         cur.execute(
             "INSERT INTO skills (name) VALUES (%s) ON DUPLICATE KEY UPDATE name = VALUES(name)",
             (skill,),

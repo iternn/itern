@@ -1,3 +1,36 @@
+# Revision 5 — OJT tracking, school coordinators, admin, chat extras
+
+- **OJT hours tracker.** After a student accepts an offer they get *My OJT*: log daily hours (max 12/day, 15-minute steps, nothing in the future), see a progress bar toward the required hours, and the company approves or rejects each entry (with a reason). Companies manage this under *Interns*.
+- **Document checklist.** Endorsement letter, MOA, waiver and evaluation form, each with upload + approve / request-changes. The school coordinator reviews; if a school has no coordinator the company reviews instead.
+- **Completion certificate.** Unlocks automatically when the required hours are approved and the evaluation form is approved. Generated as a PDF (`pdf-lib` — run `npm install` once in `backend`).
+- **School coordinator role** (third login): own sign-up, dashboard and *Students* page with every student's hours, documents and certificate. Students are linked to a coordinator by school name (suggested while signing up so names match).
+- **Admin console** (fourth login): approve / reject new companies and coordinators, suspend, reinstate and delete fake accounts. The first admin is created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `backend/.env`. New companies and coordinators start as *Pending*; existing accounts stay *Approved*.
+- **Chat.** Typing indicator and file attachments (PDF, images, Word, text; 10 MB; content-checked). Email notifications for new messages (only if still unread after 5 minutes, max one per chat per 30 min) and for scheduled interviews; switchable in Settings.
+- **Matches** gets a location filter.
+- Security: `/uploads` now only serves profile photos publicly — resumes, OJT documents and chat files go through login-protected routes. Suspending an account takes effect immediately.
+
+---
+
+# Revision 4 — Posting details, offers, shortlist, calendar, account
+
+- **Posting details.** Program type (OJT / Internship), pay (Unpaid / With allowance / Paid + amount per day/week/month), benefits, location, start & end date, required hours, work days, shift hours and application deadline. Published postings must be complete; drafts can be partial. Students see chips on Matches, a Details popup, and can filter by pay / program / work mode. Postings past their deadline disappear and can't be applied to.
+- **Accept / decline offers.** A student sees the full duration, schedule, hours, pay and location on the offer, confirms before accepting, and can decline with a reason. New statuses *Accepted* and *Declined* (an accepted offer keeps its slot; a declined one frees it for the waitlist). Offers can only be made when the posting has dates + schedule. `applications.status` is converted from ENUM to VARCHAR automatically if needed.
+- **Shortlist & notes.** Star applicants, filter by shortlisted, and keep private notes (never sent to students). Rejecting opens a dialog with an optional message that is delivered in the chat.
+- **Calendar & reminders.** "Upcoming interviews" on both dashboards with Join + Add to calendar (.ics). Reminders go to both sides ~24h and ~1h before (bell + email when Gmail is configured). Times are worded in Philippine time (`APP_TIMEZONE` to change).
+- **Forgot password** (code by email) and **Settings** for both portals: name, email (verified by code), password, delete account.
+- Security: company-only routes now check the company owns the application; password/email/delete endpoints are rate-limited.
+
+---
+
+# Revision 3 — Messaging, resume viewer, company profile fix
+
+- **Company profile fixed.** The page failed with `Unknown column 'profile_photo_path'` because the DB migration was never run. The backend now checks/updates the database on every start (`backend/db/ensureSchema.js`), so no manual SQL is needed. The profile picture now fills the avatar circle beside the company name (sidebar + top bar).
+- **Resume stays in its box** on the student profile as a file card (name, upload date) with **View** (in-page PDF viewer) and **Replace**. Companies can open an applicant's resume from the Applicants modal. Resumes are served through login-protected routes (`GET /api/interns/me/resume`, `GET /api/interns/:id/resume`).
+- **Verify Skills replaced by Messages** for both portals: conversation list, live delivery, unread badge, "Seen" marker. A chat can start once the student has applied to the company (`/api/messages/*`).
+- **Meeting link now reaches the student.** Applications page shows the interview date, format, interviewer and a working *Join call* button; the details are also posted into the chat and sent as a notification. Links are normalised (`meet.google.com/x` → `https://…`), video calls require a link, and rescheduling replaces the old interview.
+
+---
+
 # ITern — Revision Pass (pre-defense)
 
 ## 🔴 Check this first — likely cause of "authentication isn't working"

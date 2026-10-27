@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITern — Admin Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/auth.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="auth-visual">
+      <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+      <div class="ring r1"></div><div class="ring r2"></div>
+      <div class="sparks"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <h2>Keep ITern trustworthy.</h2>
+      <p class="tagline">Approve new companies and coordinators, and remove fake accounts.</p>
+    </section>
+    <section class="auth-form-side">
+      <a class="back-link" href="../index.html">&larr; Back to home</a>
+      <div class="inner">
+        <div class="brand-row"><div class="mark">IT</div><div class="name">ITern</div></div>
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to the admin console.</p>
+        <form id="loginForm">
+          <div class="field"><label>Email</label><input class="input" id="email" type="email" required></div>
+          <div class="field"><label>Password</label><input class="input" id="password" type="password" required></div>
+          <div style="text-align:right;margin:-6px 0 14px;"><a class="link" href="forgot-password.html" style="font-size:12.5px;">Forgot password?</a></div>
+          <button class="btn btn-primary btn-block" type="submit">Log in</button>
+          <div class="error-text" id="errorBox"></div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+<script src="../assets/js/auth-fx.js"></script>
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const { user, token } = await api('/auth/login', { method: 'POST', body: { role: 'admin', email: email.value, password: password.value } });
+    Session.set(user, token);
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.add('show');
+  }
+});
+</script>
+</body>
+</html>

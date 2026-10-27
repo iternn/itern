@@ -7,64 +7,227 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/base.css">
-<style>
-  .board { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
-  .col-title { font-weight:700; font-size:12.5px; margin-bottom:10px; color:var(--ink-500); text-transform:uppercase; letter-spacing:.04em; }
-  .kcard { margin-bottom:10px; padding:14px; }
-</style>
 </head>
 <body>
   <div class="app-shell">
     <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
     <main class="main">
-      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>YOUR APPLICATIONS</div><h1>Applications</h1><p>Track every application in one place, from applied to final decision.</p></div>
-      <div class="card" style="margin-bottom:16px;padding:14px 18px;">
-        <input class="input" id="searchInput" placeholder="Search by company or posting title…">
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>YOUR APPLICATIONS</div><h1>Track every application in one place.</h1><p>See where each internship application stands and what to do next, from applied to final decision.</p></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-icon tone-blue" data-icon="briefcase"></div><div class="value" id="statTotal">–</div><div class="label">Total applications</div></div>
+        <div class="stat-card"><div class="stat-icon tone-amber" data-icon="calendar"></div><div class="value" id="statReview">–</div><div class="label">Waitlisted</div></div>
+        <div class="stat-card"><div class="stat-icon tone-violet" data-icon="target"></div><div class="value" id="statInterview">–</div><div class="label">Interviewing</div></div>
+        <div class="stat-card"><div class="stat-icon tone-green" data-icon="check"></div><div class="value" id="statOffer">–</div><div class="label">Offers</div></div>
       </div>
-      <div class="board" id="board"></div>
+      <div class="card">
+        <div class="card-head"><h3>My Applications</h3></div>
+        <div class="filters">
+          <select class="input" id="statusFilter"><option value="">All status</option><option>Applied</option><option>Waitlisted</option><option>Interviewing</option><option>Offer</option><option>Accepted</option><option>Declined</option><option>Rejected</option></select>
+          <input class="input grow" id="searchInput" placeholder="Search by company or position…">
+          <select class="input" id="sortBy"><option value="date">Newest first</option><option value="match">Best match</option></select>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Company</th><th>Position</th><th>Match</th><th>Status</th><th>Applied Date</th><th></th></tr></thead>
+          <tbody id="appRows"></tbody>
+        </table>
+        <div class="foot-row" id="footRow"></div>
+      </div>
+      <div class="card offer-card" id="offerCard" style="margin-top:16px;display:none;"></div>
+      <div class="card" id="interviewCard" style="margin-top:16px;display:none;"></div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-head"><h3 id="progressTitle">Application Progress</h3></div>
+        <div class="stepper" id="stepper"></div>
+      </div>
     </main>
+    </div>
   </div>
+
+  <div class="modal-backdrop" id="respondBackdrop"><div class="modal" id="respondModal"></div></div>
 
 <script type="module">
 import { api, Session } from '../assets/js/api.js';
-import { renderNav } from '../assets/js/nav.js';
+import { renderNav, onLive, esc, fmtDate, fmtDateTime, statusPill, safeLink, icon, toast } from '../assets/js/nav.js';
+import { factsHTML, fmtDay } from '../assets/js/posting.js';
+import { confirmDialog } from '../assets/js/dialog.js';
 renderNav('student', 'applications');
+onLive(() => load());
 
-const STAGES = ['Applied', 'Waitlisted', 'Interviewing', 'Offer', 'Rejected'];
 let allApps = [];
+let selectedId = null;
+searchInput.value = new URLSearchParams(location.search).get('q') || '';
 
 async function load() {
   allApps = await api('/applications/mine', { token: Session.token() });
+  statTotal.textContent = allApps.length;
+  statReview.textContent = allApps.filter(a => a.status === 'Waitlisted').length;
+  statInterview.textContent = allApps.filter(a => a.status === 'Interviewing').length;
+  statOffer.textContent = allApps.filter(a => a.status === 'Offer' || a.status === 'Accepted').length;
   draw();
 }
 
-function draw() {
+function visibleApps() {
   const q = searchInput.value.trim().toLowerCase();
-  const apps = q
-    ? allApps.filter(a => a.title.toLowerCase().includes(q) || a.company_name.toLowerCase().includes(q))
-    : allApps;
+  const st = statusFilter.value;
+  const rows = allApps.filter(a =>
+    (!st || a.status === st) &&
+    (!q || a.title.toLowerCase().includes(q) || a.company_name.toLowerCase().includes(q)));
+  return rows.sort(sortBy.value === 'match'
+    ? (a, b) => b.match_score - a.match_score
+    : (a, b) => new Date(b.applied_at) - new Date(a.applied_at));
+}
 
-  board.innerHTML = STAGES.map(stage => {
-    const items = apps.filter(a => a.status === stage);
-    return `<div>
-      <div class="col-title">${stage} (${items.length})</div>
-      ${items.map(a => `
-        <div class="card kcard">
-          <div style="font-weight:700;font-size:13px;">${a.title}</div>
-          <div style="color:var(--ink-500);font-size:12px;margin:4px 0;">${a.company_name}</div>
-          <div style="font-family:var(--font-display);font-weight:800;color:var(--violet-600);font-size:13px;">${a.match_score}%</div>
-          ${a.meeting_link ? `<a href="${a.meeting_link}" target="_blank" class="badge badge-strong" style="margin-top:6px;display:inline-block;text-decoration:none;">Join call</a>` : ''}
-          <button class="btn btn-danger btn-sm" data-withdraw="${a.id}" style="margin-top:8px;width:100%;">Withdraw</button>
-        </div>`).join('') || '<p style="color:var(--ink-300);font-size:12px;">Nothing here.</p>'}
-    </div>`;
-  }).join('');
+function draw() {
+  const apps = visibleApps();
+  // An offer waiting for your answer always comes first.
+  if (!apps.some(a => a.id === selectedId)) selectedId = (apps.find(a => a.status === 'Offer') || apps[0])?.id ?? null;
 
-  board.querySelectorAll('[data-withdraw]').forEach(btn => btn.addEventListener('click', async () => {
+  appRows.innerHTML = apps.map(a => `
+    <tr class="selectable ${a.id === selectedId ? 'selected' : ''}" data-row="${a.id}">
+      <td><b>${esc(a.company_name)}</b></td>
+      <td>${esc(a.title)}</td>
+      <td><b style="color:var(--violet-600);">${a.match_score}%</b></td>
+      <td>${statusPill(a.status)}${a.scheduled_at ? `<div class="row-sub" style="margin-top:4px;">${icon('calendar', 12)} ${esc(fmtDateTime(a.scheduled_at))}</div>` : ''}</td>
+      <td>${fmtDate(a.applied_at)}</td>
+      <td><div class="actions">
+        ${a.status === 'Offer' ? `<button class="btn btn-primary btn-sm" data-review="${a.id}" type="button">Review offer</button>` : ''}
+        ${safeLink(a.meeting_link) ? `<a href="${esc(safeLink(a.meeting_link))}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" data-stop>Join call</a>` : ''}
+        <a class="btn btn-ghost btn-sm" href="messages.html?with=${encodeURIComponent(a.company_id)}" data-stop>Message</a>
+        <button class="btn btn-danger btn-sm" data-withdraw="${a.id}" type="button">Withdraw</button>
+      </div></td>
+    </tr>`).join('') || `<tr><td colspan="6"><div class="empty-state">${allApps.length ? 'No applications match your filters.' : 'No applications yet — head to Matches to apply.'}</div></td></tr>`;
+  footRow.textContent = allApps.length ? `Showing ${apps.length} of ${allApps.length} application${allApps.length === 1 ? '' : 's'}` : '';
+
+  appRows.querySelectorAll('[data-row]').forEach(tr => tr.addEventListener('click', () => { selectedId = tr.dataset.row; draw(); }));
+  appRows.querySelectorAll('[data-withdraw]').forEach(btn => btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!(await confirmDialog({ title: 'Withdraw this application?', message: 'The company will no longer see it. You can apply again later if the posting is still open.', confirmLabel: 'Withdraw' }))) return;
     await api(`/applications/${btn.dataset.withdraw}`, { method: 'DELETE', token: Session.token() });
     load();
   }));
+  appRows.querySelectorAll('[data-review]').forEach(btn => btn.addEventListener('click', (e) => {
+    e.stopPropagation(); selectedId = btn.dataset.review; draw(); offerCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
+  appRows.querySelectorAll('[data-stop]').forEach(el => el.addEventListener('click', (e) => e.stopPropagation()));
+  const selected = allApps.find(a => a.id === selectedId);
+  drawOffer(selected);
+  drawInterview(selected);
+  drawStepper(selected);
 }
-searchInput.addEventListener('input', draw);
+
+// The offer: everything the student is agreeing to, then Accept / Decline.
+function drawOffer(app) {
+  if (!app || !['Offer', 'Accepted', 'Declined'].includes(app.status)) { offerCard.style.display = 'none'; return; }
+  offerCard.style.display = 'block';
+  offerCard.classList.toggle('done', app.status !== 'Offer');
+  const facts = factsHTML({ ...app, application_deadline: null });
+  const hasTerms = app.start_date && app.end_date;
+  const head = {
+    Offer: [`🎉 You have an offer from ${esc(app.company_name)}`, `Review the details below, then accept or decline. The company is waiting for your answer.`],
+    Accepted: [`You accepted this offer`, app.start_date ? `You start on ${esc(fmtDay(app.start_date))}. Message the company if you need anything before then.` : 'Message the company if you need anything before you start.'],
+    Declined: [`You declined this offer`, 'The slot was released to other applicants.'],
+  }[app.status];
+  offerCard.innerHTML = `
+    <div class="card-head"><h3>${head[0]}</h3>${statusPill(app.status)}</div>
+    <p class="offer-lead">${head[1]}</p>
+    <div style="font-weight:800;margin-bottom:10px;">${esc(app.title)}</div>
+    ${hasTerms ? facts : '<p class="help-text">The company hasn\'t added the duration and schedule yet — message them before you accept.</p>' + facts}
+    ${app.status === 'Offer' ? `<div class="offer-actions">
+        <button class="btn btn-primary" id="acceptBtn" type="button">Accept offer</button>
+        <button class="btn btn-ghost" id="declineBtn" type="button">Decline</button>
+        <a class="btn btn-ghost" href="messages.html?with=${encodeURIComponent(app.company_id)}">Ask the company a question</a>
+      </div>` : ''}
+    ${app.status === 'Accepted' ? `<div class="offer-actions"><a class="btn btn-primary" href="ojt.html">Open My OJT — log hours &amp; upload documents</a>
+        <a class="btn btn-ghost" href="messages.html?with=${encodeURIComponent(app.company_id)}">Message ${esc(app.company_name)}</a></div>` : ''}`;
+  document.getElementById('acceptBtn')?.addEventListener('click', () => openRespond(app, 'Accept'));
+  document.getElementById('declineBtn')?.addEventListener('click', () => openRespond(app, 'Decline'));
+}
+
+function openRespond(app, decision) {
+  const accept = decision === 'Accept';
+  respondModal.innerHTML = accept ? `
+      <h3>Accept this offer?</h3>
+      <p style="margin:6px 0 14px;font-size:13.5px;color:var(--ink-500);">You're confirming your place as <b style="color:var(--ink-900);">${esc(app.title)}</b> at <b style="color:var(--ink-900);">${esc(app.company_name)}</b>. Please make sure the duration and schedule work for you.</p>
+      ${factsHTML({ ...app, application_deadline: null, schedule_notes: app.schedule_notes })}
+      <p class="help-text" style="margin-top:14px;">The company is notified right away. This can't be undone from your side — to change plans afterwards, message them.</p>
+      <div class="error-text" id="respondErr"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-ghost" id="respondCancel" type="button" style="flex-shrink:0;white-space:nowrap;">Not yet</button>
+        <button class="btn btn-primary btn-block" id="respondGo" type="button">Yes, accept this offer</button></div>`
+    : `
+      <h3>Decline this offer?</h3>
+      <p style="margin:6px 0 14px;font-size:13.5px;color:var(--ink-500);">This gives your slot at <b style="color:var(--ink-900);">${esc(app.company_name)}</b> to another student. You can't undo it.</p>
+      <div class="field"><label>Reason (optional — shared with the company)</label><textarea class="input" id="respondReason" rows="3" placeholder="e.g., I accepted another placement"></textarea></div>
+      <div class="error-text" id="respondErr"></div>
+      <div style="display:flex;gap:10px;margin-top:8px;"><button class="btn btn-ghost" id="respondCancel" type="button" style="flex-shrink:0;white-space:nowrap;">Cancel</button>
+        <button class="btn btn-danger btn-block" id="respondGo" type="button">Decline offer</button></div>`;
+  respondBackdrop.classList.add('open');
+  document.getElementById('respondCancel').addEventListener('click', () => respondBackdrop.classList.remove('open'));
+  document.getElementById('respondGo').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try {
+      await api(`/applications/${app.id}/respond`, { method: 'POST', token: Session.token(),
+        body: { decision, reason: document.getElementById('respondReason')?.value || '' } });
+      respondBackdrop.classList.remove('open');
+      toast(accept ? 'Offer accepted — congratulations!' : 'Offer declined.');
+      load();
+    } catch (err) {
+      const box = document.getElementById('respondErr'); box.textContent = err.message; box.classList.add('show'); e.target.disabled = false;
+    }
+  });
+}
+respondBackdrop.addEventListener('click', (e) => { if (e.target === respondBackdrop) respondBackdrop.classList.remove('open'); });
+
+// Interview details for the selected application — time, format, interviewer and the join link.
+function drawInterview(app) {
+  if (!app || (!app.scheduled_at && app.status !== 'Interviewing')) { interviewCard.style.display = 'none'; return; }
+  interviewCard.style.display = 'block';
+  const msgBtn = `<a class="btn btn-ghost btn-sm" href="messages.html?with=${encodeURIComponent(app.company_id)}">Message ${esc(app.company_name)}</a>`;
+  if (!app.scheduled_at) {
+    interviewCard.innerHTML = `<div class="card-head"><h3>Interview – ${esc(app.company_name)}</h3>${msgBtn}</div>
+      <p class="help-text" style="margin:0;">The company moved you to the interview stage but hasn't set a time yet. You'll be notified as soon as they do.</p>`;
+    return;
+  }
+  const link = safeLink(app.meeting_link);
+  const rows = [
+    ['When', fmtDateTime(app.scheduled_at)],
+    ['Format', app.interview_mode || '—'],
+    app.interviewer ? ['Interviewer', app.interviewer] : null,
+    ['Position', app.title],
+  ].filter(Boolean);
+  interviewCard.innerHTML = `
+    <div class="card-head"><h3>Interview – ${esc(app.company_name)}</h3>${msgBtn}</div>
+    <div class="grid2 even" style="margin:0;align-items:center;">
+      <dl style="margin:0;display:grid;grid-template-columns:110px 1fr;gap:8px 12px;font-size:13.5px;">
+        ${rows.map(([k, v]) => `<dt style="color:var(--ink-500);">${esc(k)}</dt><dd style="margin:0;font-weight:700;color:var(--ink-900);">${esc(v)}</dd>`).join('')}
+      </dl>
+      <div>${link
+        ? `<a class="btn btn-primary" href="${esc(link)}" target="_blank" rel="noopener">${icon('video', 16)} Join call</a>
+           <button class="btn btn-ghost" id="copyLinkBtn" type="button" style="margin-left:8px;">Copy link</button>
+           <div class="help-text" style="word-break:break-all;margin-top:8px;">${esc(link)}</div>`
+        : '<div class="help-text">In-person interview — no call link needed.</div>'}</div>
+    </div>`;
+  document.getElementById('copyLinkBtn')?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(link).then(() => toast('Meeting link copied.'), () => toast(link));
+  });
+}
+
+// Applied -> Under review (waitlist) -> Interview -> Final decision
+const STEP_REACHED = { Applied: 1, Waitlisted: 2, Interviewing: 3, Offer: 4, Accepted: 4, Declined: 4, Rejected: 4 };
+function drawStepper(app) {
+  if (!app) { progressTitle.textContent = 'Application Progress'; stepper.innerHTML = '<div class="empty-state" style="width:100%;">Select an application to see its progress.</div>'; return; }
+  progressTitle.textContent = `Application Progress – ${app.company_name}`;
+  const reached = STEP_REACHED[app.status] || 1;
+  const labels = ['Applied', 'Under Review', 'Interview', ['Rejected', 'Declined', 'Accepted', 'Offer'].includes(app.status) ? app.status : 'Final Decision'];
+  stepper.innerHTML = labels.map((label, i) => {
+    const n = i + 1;
+    const done = n <= reached;
+    const bad = done && n === 4 && (app.status === 'Rejected' || app.status === 'Declined');
+    return `<div class="step ${bad ? 'bad' : done ? 'done' : ''}"><div class="line"></div><div class="circ">${bad ? '✕' : done ? '✓' : n}</div><small>${label}</small></div>`;
+  }).join('');
+}
+
+[searchInput, statusFilter, sortBy].forEach(el => el.addEventListener('input', draw));
 load();
 </script>
 </body>

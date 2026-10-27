@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
+    <main class="main">
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>COORDINATOR DASHBOARD</div><h1>Keep every student's OJT on track.</h1><p>Placements, hours and documents for the students of your school.</p></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-icon tone-blue" data-icon="users"></div><div class="value" id="sStudents">–</div><div class="label">Students from your school</div></div>
+        <div class="stat-card"><div class="stat-icon tone-violet" data-icon="briefcase"></div><div class="value" id="sPlaced">–</div><div class="label">On placement</div></div>
+        <div class="stat-card"><div class="stat-icon tone-green" data-icon="award"></div><div class="value" id="sDone">–</div><div class="label">Completed OJT</div></div>
+        <div class="stat-card"><div class="stat-icon tone-amber" data-icon="file"></div><div class="value" id="sDocs">–</div><div class="label">Documents to review</div></div>
+      </div>
+      <div class="grid2 even">
+        <div class="card"><div class="card-head"><h3>Needs your review</h3><a href="students.html">All students</a></div><div id="needs"><div class="empty-state">Loading…</div></div></div>
+        <div class="card"><div class="card-head"><h3>How matching works</h3></div>
+          <p style="font-size:13.5px;line-height:1.6;color:var(--ink-500);margin:0;">Students are linked to you by the <b style="color:var(--ink-900);">school name</b> they enter. Yours is <b style="color:var(--ink-900);" id="mySchool">…</b>.
+          If a student is missing, ask them to use the same school name in their account settings.</p>
+          <div class="mini-stats"><div><b id="sHours">–</b>hours approved in total</div></div></div>
+      </div>
+    </main>
+    </div>
+  </div>
+
+<script type="module">
+import { renderNav } from '../assets/js/nav.js';
+renderNav('coordinator', 'dashboard');
+import { api, Session } from '../assets/js/api.js';
+import { esc, onLive, fmtDate } from '../assets/js/nav.js';
+const $ = (id) => document.getElementById(id);
+$('mySchool').textContent = Session.get()?.school || 'your school';
+async function load() {
+  try {
+    const s = await api('/ojt/summary', { token: Session.token() });
+    $('sStudents').textContent = s.students; $('sPlaced').textContent = s.placements; $('sDone').textContent = s.completed;
+    $('sDocs').textContent = s.docsAwaiting; $('sHours').textContent = s.approvedHours;
+    $('needs').innerHTML = s.needsReview.length ? s.needsReview.map(n => `
+      <div class="row-item"><div style="min-width:0;"><div class="row-title">${esc(n.student)}</div>
+        <div class="row-sub">${esc(n.label)} · ${esc(n.company)} · ${esc(fmtDate(n.uploadedAt))}</div></div>
+        <div class="row-meta"><a class="btn btn-primary btn-sm" href="students.html?open=${n.applicationId}">Review</a></div></div>`).join('')
+      : '<div class="empty-state">Nothing waiting for review. 🎉</div>';
+  } catch (err) {
+    $('needs').innerHTML = `<div class="empty-state">${esc(err.message)}</div>`;
+  }
+}
+onLive(load); load();
+</script>
+</body>
+</html>

@@ -7,35 +7,42 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/base.css">
-<style>.content { max-width: 820px; }</style>
 </head>
 <body>
   <div class="app-shell">
     <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
     <main class="main">
       <div class="content">
-      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>APPLICANTS</div><h1>Applicants</h1><p>Ranked by fit across all postings.</p></div>
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>APPLICANTS</div><h1>Review every applicant.</h1><p>Ranked by fit across all postings — update status and schedule interviews.</p></div>
       <div class="card" style="margin-bottom:16px;padding:14px 18px;display:flex;gap:10px;">
         <input class="input" id="searchInput" placeholder="Search by student name, school, or posting…">
         <select class="input" id="statusFilter" style="width:180px;">
           <option value="">All statuses</option>
-          <option>Applied</option><option>Waitlisted</option><option>Interviewing</option><option>Offer</option><option>Rejected</option>
+          <option>Applied</option><option>Waitlisted</option><option>Interviewing</option><option>Offer</option><option>Accepted</option><option>Declined</option><option>Rejected</option>
         </select>
+        <button class="btn btn-ghost" id="starFilter" type="button" aria-pressed="false" style="flex-shrink:0;white-space:nowrap;">★ Shortlisted</button>
       </div>
       <div class="card" style="padding:6px 24px;"><div class="row-list" id="list"></div></div>
       </div>
     </main>
+    </div>
   </div>
 
   <div class="modal-backdrop" id="backdrop"><div class="modal" id="modalBody"></div></div>
 
 <script type="module">
-import { api, Session } from '../assets/js/api.js';
-import { renderNav, matchRing } from '../assets/js/nav.js';
+import { api, Session, API_BASE } from '../assets/js/api.js';
+import { renderNav, onLive, matchRing, esc, fmtDateTime, safeLink, statusPill, toast } from '../assets/js/nav.js';
 renderNav('company', 'applicants');
+onLive(() => draw());
 
 const STAGES = ['Applied', 'Waitlisted', 'Interviewing', 'Offer', 'Rejected'];
 let allApps = [];
+let onlyStarred = false;
+const LOCKED = ['Accepted', 'Declined'];  // the student has answered — the company can't change these
+searchInput.value = new URLSearchParams(location.search).get('q') || '';
 
 async function draw() {
   allApps = await api('/applications/company', { token: Session.token() });
@@ -48,65 +55,178 @@ function render() {
   const apps = allApps.filter(a => {
     const matchesText = !q || a.intern_name.toLowerCase().includes(q) || a.school.toLowerCase().includes(q) || a.title.toLowerCase().includes(q);
     const matchesStatus = !statusQ || a.status === statusQ;
-    return matchesText && matchesStatus;
-  });
+    return matchesText && matchesStatus && (!onlyStarred || a.shortlisted);
+  }).sort((x, y) => y.shortlisted - x.shortlisted); // shortlisted first (stable: keeps best match first within each group)
 
   list.innerHTML = apps.map(a => `
     <div class="row-item">
+      <button class="star-btn ${a.shortlisted ? 'on' : ''}" data-star="${a.id}" type="button" title="${a.shortlisted ? 'Remove from shortlist' : 'Add to shortlist'}" aria-label="Shortlist ${esc(a.intern_name)}" aria-pressed="${a.shortlisted ? 'true' : 'false'}">${a.shortlisted ? '★' : '☆'}</button>
       ${matchRing(a.match_score, { size: 44 })}
-      <div>
-        <div class="row-title">${a.intern_name}</div>
-        <div class="row-sub">${a.school} · applied for ${a.title}</div>
+      <div style="min-width:0;">
+        <div class="row-title">${esc(a.intern_name)}</div>
+        <div class="row-sub">${esc(a.school)} · applied for ${esc(a.title)}</div>
+        ${a.scheduled_at ? `<div class="row-sub" style="color:var(--violet-600);font-weight:700;">Interview: ${esc(fmtDateTime(a.scheduled_at))}</div>` : ''}
+        ${a.company_notes ? '<div class="chips"><span class="chip">Has private notes</span></div>' : ''}
       </div>
       <div class="row-meta">
-        <select class="input" style="width:150px;" data-status="${a.id}">
-          ${STAGES.map(s => `<option ${s === a.status ? 'selected' : ''}>${s}</option>`).join('')}
-        </select>
+        ${LOCKED.includes(a.status)
+          ? `${statusPill(a.status)}<span class="help-text" style="margin:0;">Student ${a.status === 'Accepted' ? 'accepted' : 'declined'} the offer</span>`
+          : `<select class="input" style="width:150px;" data-status="${a.id}">
+              ${STAGES.map(s => `<option ${s === a.status ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>`}
+        <a class="btn btn-ghost btn-sm" href="messages.html?with=${encodeURIComponent(a.intern_id)}">Message</a>
         <button class="btn btn-ghost btn-sm" data-view="${a.intern_id}" data-app="${a.id}" type="button">View profile</button>
       </div>
     </div>`).join('') || `<div class="empty-state">${allApps.length ? 'No applicants match your search.' : 'No applicants yet.'}</div>`;
 
-  list.querySelectorAll('[data-status]').forEach(sel => sel.addEventListener('change', async () => {
-    await api(`/applications/${sel.dataset.status}/status`, { method: 'PATCH', token: Session.token(), body: { status: sel.value } });
-    draw();
+  list.querySelectorAll('[data-star]').forEach(btn => btn.addEventListener('click', () => toggleStar(btn.dataset.star)));
+  list.querySelectorAll('[data-status]').forEach(sel => sel.addEventListener('change', () => {
+    const a = allApps.find(x => x.id === sel.dataset.status);
+    if (sel.value === 'Rejected') openReject(a);          // ask for an optional message first
+    else changeStatus(a.id, sel.value);
   }));
   list.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => openProfile(btn.dataset.view, btn.dataset.app)));
+  const focusId = new URLSearchParams(location.search).get('open');
+  if (focusId && !window.__opened) { window.__opened = true; const a = allApps.find(x => x.id === focusId); if (a) openProfile(a.intern_id, a.id); }
+}
+
+async function changeStatus(id, status, message) {
+  try {
+    await api(`/applications/${id}/status`, { method: 'PATCH', token: Session.token(), body: { status, message } });
+    if (status === 'Offer') toast('Offer sent — the student can now see the duration, schedule and pay.');
+  } catch (err) { toast(err.message); }   // e.g. the posting has no schedule yet, so an offer can't be made
+  draw();
+}
+
+async function toggleStar(id) {
+  const a = allApps.find(x => x.id === id);
+  a.shortlisted = a.shortlisted ? 0 : 1; render();       // instant feedback
+  try { await api(`/applications/${id}/shortlist`, { method: 'PATCH', token: Session.token(), body: { shortlisted: !!a.shortlisted } }); }
+  catch (err) { a.shortlisted = a.shortlisted ? 0 : 1; render(); toast(err.message); }
+}
+starFilter.addEventListener('click', () => {
+  onlyStarred = !onlyStarred;
+  starFilter.setAttribute('aria-pressed', onlyStarred);
+  starFilter.classList.toggle('btn-primary', onlyStarred); starFilter.classList.toggle('btn-ghost', !onlyStarred);
+  render();
+});
+
+function openReject(a) {
+  modalBody.innerHTML = `
+    <h3>Reject ${esc(a.intern_name)}?</h3>
+    <p style="margin:6px 0 14px;font-size:13.5px;color:var(--ink-500);">They'll be notified. A short, kind message helps students learn from the process — leave it empty to send only the status update.</p>
+    <div class="field"><label>Message to the student (optional)</label>
+      <textarea class="input" id="rejectMsg" rows="5">Thank you for applying to ${esc(a.title)}. After careful review we've decided not to move forward with your application this time. We appreciate your interest and encourage you to apply again in the future.</textarea></div>
+    <div style="display:flex;gap:10px;"><button class="btn btn-ghost" id="rejectCancel" type="button" style="flex-shrink:0;white-space:nowrap;">Cancel</button>
+      <button class="btn btn-danger btn-block" id="rejectGo" type="button">Reject applicant</button></div>`;
+  backdrop.classList.add('open');
+  document.getElementById('rejectCancel').addEventListener('click', () => { backdrop.classList.remove('open'); draw(); });
+  document.getElementById('rejectGo').addEventListener('click', async () => {
+    const message = document.getElementById('rejectMsg').value.trim();
+    backdrop.classList.remove('open');
+    await changeStatus(a.id, 'Rejected', message);
+  });
+}
+
+// datetime-local wants "YYYY-MM-DDTHH:mm" in the user's own timezone.
+const toLocalInput = (d) => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
+
+async function viewResume(internId, fileName) {
+  try {
+    const res = await fetch(`${API_BASE}/interns/${internId}/resume`, { headers: { Authorization: `Bearer ${Session.token()}` } });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not open the resume.');
+    const url = URL.createObjectURL(await res.blob());
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (err) { toast(err.message); }
 }
 
 async function openProfile(internId, applicationId) {
   const intern = await api(`/interns/${internId}/public`, { token: Session.token() });
+  const app = allApps.find(a => a.id === applicationId) || {};
+  const hasInterview = !!app.scheduled_at;
+  const canSchedule = !['Rejected', 'Declined'].includes(app.status);
   modalBody.innerHTML = `
-    <h3>${intern.name}</h3>
-    <p style="color:var(--ink-500);font-size:13px;margin-top:4px;">${intern.school} · ${intern.program}</p>
-    <p style="margin:12px 0;font-size:13.5px;">${intern.career_goal || ''}</p>
+    <h3>${esc(intern.name)}</h3>
+    <p style="color:var(--ink-500);font-size:13px;margin-top:4px;">${esc(intern.school)} · ${esc(intern.program)}</p>
+    <p style="margin:12px 0;font-size:13.5px;">${esc(intern.career_goal || '')}</p>
     <div style="margin-bottom:14px;">
-      ${intern.skills.map(s => `<span class="badge badge-neutral" style="margin:2px;">${s.name} · ${s.level}% (${s.source})</span>`).join('')}
+      ${intern.skills.map(s => `<span class="badge badge-neutral" style="margin:2px;">${esc(s.name)} · ${s.level}% (${esc(s.source)})</span>`).join('')}
     </div>
     ${intern.testScores.length ? `<p style="font-size:12.5px;font-weight:700;">Verified test scores</p>
-      ${intern.testScores.map(t => `<div style="font-size:12.5px;color:var(--ink-500);">${t.skill}: ${t.best_score}%</div>`).join('')}` : ''}
-    ${intern.resume_path ? '<p style="margin-top:10px;font-size:12.5px;color:var(--mint-600);font-weight:700;">Resume on file</p>' : ''}
+      ${intern.testScores.map(t => `<div style="font-size:12.5px;color:var(--ink-500);">${esc(t.skill)}: ${t.best_score}%</div>`).join('')}` : ''}
+    <div id="reqDocs" style="margin-top:12px;"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      ${intern.resume_path ? '<button class="btn btn-primary btn-sm" id="viewResumeBtn" type="button">View resume</button>' : '<span class="help-text">No resume uploaded yet.</span>'}
+      <a class="btn btn-ghost btn-sm" href="messages.html?with=${encodeURIComponent(internId)}">Message</a>
+      <button class="btn btn-ghost btn-sm" id="starInModal" type="button">${app.shortlisted ? '★ Shortlisted' : '☆ Shortlist'}</button>
+    </div>
+    <div style="margin-top:16px;"><b style="font-size:13px;">Private notes</b> <span class="help-text" style="display:inline;">— only your company can see these</span>
+      <textarea class="input notes-box" id="notesBox" maxlength="4000" placeholder="Impressions, questions for the interview, follow-ups…" style="margin-top:6px;">${esc(app.company_notes || '')}</textarea>
+      <div class="save-state" id="notesState"></div></div>
     <hr style="margin:16px 0;border:none;border-top:1px solid var(--ink-100);">
-    <h4 style="font-size:14px;">Schedule an interview</h4>
+    ${canSchedule ? `<h4 style="font-size:14px;">${hasInterview ? 'Reschedule interview' : 'Schedule an interview'}</h4>
+    ${hasInterview ? `<p class="help-text" style="margin:4px 0 0;">Currently: ${esc(fmtDateTime(app.scheduled_at))} · ${esc(app.interview_mode || '')}</p>` : ''}
     <form id="scheduleForm" style="margin-top:12px;">
-      <div class="field"><label>Date &amp; time</label><input class="input" id="scheduledAt" type="datetime-local" required></div>
+      <div class="field"><label>Date &amp; time</label><input class="input" id="scheduledAt" type="datetime-local" required value="${hasInterview ? toLocalInput(app.scheduled_at) : ''}"></div>
       <div class="field"><label>Mode</label>
-        <select class="input" id="ivMode"><option>Video call</option><option>Onsite</option></select>
+        <select class="input" id="ivMode"><option ${app.interview_mode !== 'Onsite' ? 'selected' : ''}>Video call</option><option ${app.interview_mode === 'Onsite' ? 'selected' : ''}>Onsite</option></select>
       </div>
-      <div class="field"><label>Meeting link</label><input class="input" id="meetingLink" placeholder="https://meet.google.com/..."></div>
-      <div class="field"><label>Interviewer</label><input class="input" id="interviewer"></div>
-      <button class="btn btn-primary btn-block" type="submit">Schedule</button>
-    </form>
+      <div class="field" id="linkField"><label>Meeting link</label><input class="input" id="meetingLink" placeholder="https://meet.google.com/..." value="${esc(app.meeting_link || '')}"></div>
+      <div class="field"><label>Interviewer</label><input class="input" id="interviewer" value="${esc(app.interviewer || '')}"></div>
+      <div class="error-text" id="scheduleErr"></div>
+      <button class="btn btn-primary btn-block" id="scheduleBtn" type="submit">${hasInterview ? 'Save new time' : 'Schedule'}</button>
+      <p class="help-text" style="margin-top:8px;">The student is notified right away and the details (including the link) are sent to them in Messages.</p>
+    </form>` : '<p class="help-text">Interviews can\'t be scheduled for a closed application.</p>'}
     <button class="btn btn-ghost btn-block" id="closeModalBtn" type="button" style="margin-top:8px;">Close</button>
   `;
+  document.getElementById('viewResumeBtn')?.addEventListener('click', () => viewResume(internId));
+  // submitted requirements (application letter, medical certificate, ...)
+  api(`/requirements/intern/${internId}`, { token: Session.token() }).then((st) => {
+    const docs = st.items.filter(i => !i.onProfile);
+    document.getElementById('reqDocs').innerHTML = `<p style="font-size:12.5px;font-weight:700;margin:0 0 6px;">Submitted requirements</p>` +
+      docs.map(d => `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0;">
+        <span style="flex:1;">${esc(d.label)}</span>
+        ${d.done ? `<button class="btn btn-ghost btn-sm" data-doc="${d.key}" type="button">View</button>` : '<span class="badge badge-danger">Missing</span>'}</div>`).join('');
+    document.querySelectorAll('[data-doc]').forEach(b => b.addEventListener('click', async () => {
+      try {
+        const res = await fetch(`${API_BASE}/requirements/intern/${internId}/${b.dataset.doc}/file`, { headers: { Authorization: `Bearer ${Session.token()}` } });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not open the file.');
+        const url = URL.createObjectURL(await res.blob());
+        window.open(url, '_blank', 'noopener'); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } catch (err) { toast(err.message); }
+    }));
+  }).catch(() => {});
   document.getElementById('closeModalBtn').addEventListener('click', () => backdrop.classList.remove('open'));
+  // notes: saved automatically a moment after you stop typing
+  let timer;
+  const saveNotes = async () => {
+    notesState.textContent = 'Saving…';
+    try { await api(`/applications/${applicationId}/notes`, { method: 'PATCH', token: Session.token(), body: { notes: notesBox.value } });
+      app.company_notes = notesBox.value; notesState.textContent = 'Saved'; render(); }
+    catch (err) { notesState.textContent = 'Could not save: ' + err.message; }
+  };
+  notesBox.addEventListener('input', () => { notesState.textContent = ''; clearTimeout(timer); timer = setTimeout(saveNotes, 900); });
+  notesBox.addEventListener('blur', () => { if (notesBox.value !== (app.company_notes || '')) { clearTimeout(timer); saveNotes(); } });
+  starInModal.addEventListener('click', async () => { await toggleStar(applicationId); starInModal.textContent = app.shortlisted ? '★ Shortlisted' : '☆ Shortlist'; });
+  if (!canSchedule) { backdrop.classList.add('open'); return; }
+  const syncMode = () => { linkField.style.display = ivMode.value === 'Video call' ? '' : 'none'; };
+  ivMode.addEventListener('change', syncMode); syncMode();
   document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    await api('/interviews', { method: 'POST', token: Session.token(), body: {
-      applicationId, scheduledAt: scheduledAt.value, mode: ivMode.value,
-      meetingLink: meetingLink.value, interviewer: interviewer.value,
-    }});
-    backdrop.classList.remove('open');
-    draw();
+    scheduleErr.classList.remove('show');
+    scheduleBtn.disabled = true;
+    try {
+      await api('/interviews', { method: 'POST', token: Session.token(), body: {
+        applicationId, scheduledAt: new Date(scheduledAt.value).toISOString(), mode: ivMode.value,
+        meetingLink: meetingLink.value, interviewer: interviewer.value,
+      }});
+      backdrop.classList.remove('open');
+      toast('Interview scheduled — the student has been notified.');
+      draw();
+    } catch (err) {
+      scheduleErr.textContent = err.message; scheduleErr.classList.add('show');
+    } finally { scheduleBtn.disabled = false; }
   });
   backdrop.classList.add('open');
 }

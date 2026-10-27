@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interns · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
+    <main class="main">
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>INTERNS</div><h1>Your interns, in one place.</h1><p>Approve their hours, upload the evaluation form and follow their document checklist.</p></div>
+      <div id="ojtMount"></div>
+    </main>
+    </div>
+  </div>
+
+<script type="module">
+import { renderNav } from '../assets/js/nav.js';
+renderNav('company', 'interns');
+import { mountOjt } from '../assets/js/ojt.js';
+mountOjt({ portal: 'company', root: document.getElementById('ojtMount') });
+</script>
+</body>
+</html>

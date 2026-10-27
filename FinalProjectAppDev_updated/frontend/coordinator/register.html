@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITern — Coordinator Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/auth.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <section class="auth-visual">
+      <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+      <div class="ring r1"></div><div class="ring r2"></div>
+      <div class="sparks"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <h2>Build a profile companies actually trust.</h2>
+      <p class="tagline">Take skill tests, upload your resume and let companies find you.</p>
+    </section>
+    <section class="auth-form-side">
+      <div class="inner">
+        <div class="brand-row"><div class="mark">IT</div><div class="name">ITern</div></div>
+        <div class="step-dots" id="stepDots"><span class="done"></span><span></span><span></span></div>
+
+        <div id="step1">
+          <h1>Create your coordinator account</h1>
+          <p class="sub">Step 1 of 3</p>
+          <form id="accountForm">
+            <div class="field"><label>Full name</label><input class="input" id="name" required></div>
+            <div class="field"><label>Work email</label><input class="input" id="email" type="email" required></div>
+            <div class="field"><label>Password</label><input class="input" id="password" type="password" required minlength="8"></div>
+            <button class="btn btn-primary btn-block" type="submit">Continue</button>
+          </form>
+        </div>
+
+        <div id="step2" class="step-hidden">
+          <h1>Verify your email</h1>
+          <p class="sub">Step 2 of 3 — we sent a 6-digit code to <b id="sentTo"></b></p>
+          <form id="otpForm">
+            <div class="otp-row">
+              <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
+              <input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1">
+            </div>
+            <div class="error-text" id="otpErr">That code isn't right.</div>
+            <button class="btn btn-primary btn-block" type="submit">Verify &amp; continue</button>
+          </form>
+          <p class="auth-footnote" style="margin-top:14px;">Didn't get it? Check spam, or <a class="link" href="#" id="resendLink">resend code</a></p>
+        </div>
+
+        <div id="step3" class="step-hidden">
+          <h1>Your school</h1>
+          <p class="sub">Step 3 of 3 — students are linked to you by this name, so use your school's full official name.</p>
+          <form id="schoolForm">
+            <div class="field"><label>School</label><input class="input" id="school" required placeholder="e.g., Technological Institute of the Philippines"></div>
+            <div class="field"><label>Your role (optional)</label><input class="input" id="position" placeholder="e.g., OJT Coordinator"></div>
+            <p class="help-text" style="margin:0 0 14px;">An ITern admin reviews new coordinator accounts before student information becomes visible. You can set up your account right away.</p>
+            <button class="btn btn-primary btn-block" type="submit">Create account</button>
+          </form>
+        </div>
+
+        <p class="auth-footnote">Already have an account? <a class="link" href="login.html">Log in</a></p>
+      </div>
+    </section>
+  </div>
+
+<script src="../assets/js/auth-fx.js"></script>
+<script type="module">
+import { api, Session } from '../assets/js/api.js';
+import { alertDialog } from '../assets/js/dialog.js';
+let draft = {};
+const dots = document.querySelectorAll('#stepDots span');
+function showStep(n) {
+  [1, 2, 3].forEach(i => document.getElementById('step' + i).classList.toggle('step-hidden', i !== n));
+  dots.forEach((d, i) => d.classList.toggle('done', i < n));
+}
+const stopLoading = () => document.querySelectorAll('.btn.loading').forEach(b => b.classList.remove('loading'));
+async function sendCode() { await api('/auth/otp/request', { method: 'POST', body: { email: draft.email, purpose: 'register' } }); }
+
+document.getElementById('accountForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  draft.name = document.getElementById('name').value.trim();
+  draft.email = document.getElementById('email').value.trim().toLowerCase();
+  draft.password = document.getElementById('password').value;
+  try { await sendCode(); document.getElementById('sentTo').textContent = draft.email; showStep(2); }
+  catch (err) { alertDialog('Could not send verification code: ' + err.message); stopLoading(); }
+});
+document.getElementById('resendLink').addEventListener('click', async (e) => {
+  e.preventDefault();
+  try { await sendCode(); otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled'); }); otpInputs[0].focus(); alertDialog('A new code was sent to ' + draft.email); }
+  catch (err) { alertDialog(err.message); }
+});
+const otpInputs = [...document.querySelectorAll('.otp-row input')];
+otpInputs.forEach((inp, i) => inp.addEventListener('input', () => {
+  inp.classList.toggle('filled', !!inp.value);
+  if (inp.value && otpInputs[i + 1]) otpInputs[i + 1].focus();
+}));
+document.getElementById('otpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api('/auth/otp/verify', { method: 'POST', body: { email: draft.email, code: otpInputs.map(i => i.value).join(''), purpose: 'register' } });
+    draft.verificationToken = r.verificationToken; otpErr.classList.remove('show'); showStep(3);
+  } catch (err) { otpErr.textContent = err.message; otpErr.classList.add('show'); }
+});
+document.getElementById('schoolForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  draft.school = school.value.trim(); draft.position = position.value.trim();
+  try {
+    const { user, token } = await api('/auth/register/coordinator', { method: 'POST', body: draft });
+    Session.set(user, token);
+    window.location.href = 'dashboard.html';
+  } catch (err) { alertDialog('Registration failed: ' + err.message); stopLoading(); }
+});
+</script>
+</body>
+</html>

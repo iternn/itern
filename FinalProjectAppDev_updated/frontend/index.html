@@ -3,29 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ITern</title>
+<title>ITern — Find the internship that fits your skills</title>
+<meta name="description" content="ITern matches student skills to internships with real signal, not guesswork.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/base.css">
-<style>
-  body { background: var(--gradient-hero); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-  body::before { content: ''; position: absolute; inset: 0; background: var(--gradient-mesh); mix-blend-mode: screen; }
-  .picker { position: relative; background: #fff; border-radius: var(--r-xl); padding: 48px; width: 420px; max-width: 92vw; box-shadow: var(--shadow-lg); text-align: center; }
-  .picker .mark { width: 52px; height: 52px; border-radius: var(--r-md); background: var(--gradient-hero); display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-weight: 800; margin: 0 auto 16px; box-shadow: var(--shadow-glow); }
-  .picker h1 { font-size: 24px; margin-bottom: 8px; }
-  .picker p { color: var(--ink-500); font-size: 13.5px; margin-bottom: 28px; }
-  .picker .opts { display: flex; flex-direction: column; gap: 12px; }
-</style>
+<link rel="stylesheet" href="assets/css/landing.css">
 </head>
 <body>
-  <div class="picker">
-    <div class="mark">IT</div>
-    <h1>Welcome to ITern</h1>
-    <p>Match student skills to internships with real signal, not guesswork.</p>
-    <div class="opts">
-      <a class="btn btn-primary btn-block" href="student/login.html">Continue as a student</a>
-      <a class="btn btn-ghost btn-block" href="company/login.html">Continue as a company</a>
+
+<nav class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="mark">IT</span>ITern</a>
+    <div class="nav-links">
+      <a href="#portals">Get started</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+    </div>
+    <a class="btn-nav" href="student/login.html">Log in</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="ring r1"></div><div class="ring r2"></div>
+  <div class="wrap">
+    <span class="pill"><i></i>Skill-based internship matching</span>
+    <h1 id="headline">Find the internship that <span class="grad">fits your skills.</span></h1>
+    <p class="lead">ITern matches student skills to internships with real signal, not guesswork. Verified skills for students, ranked candidates for companies.</p>
+    <div class="cta">
+      <a class="primary" href="student/register.html">I'm a student</a>
+      <a class="secondary" href="company/register.html">I'm a company</a>
     </div>
   </div>
+  <div class="scroll-hint"></div>
+</header>
+
+<section class="s" id="portals">
+  <div class="wrap">
+    <div class="center reveal">
+      <div class="eyebrow">Choose your portal</div>
+      <h2 class="title">Where would you like to start?</h2>
+      <p class="sub">One platform for students, companies and schools: the right intern, in the right role, with the paperwork handled.</p>
+    </div>
+    <div class="portals">
+      <a class="portal reveal" href="student/login.html">
+        <div class="ic">🎓</div>
+        <h3>For students</h3>
+        <p>Build a verified profile, take skill tests, upload your resume and get matched to internships that fit.</p>
+        <span class="go">Continue as a student <span>→</span></span>
+      </a>
+      <a class="portal company reveal" style="--d:.12s" href="company/login.html">
+        <div class="ic">🏢</div>
+        <h3>For companies</h3>
+        <p>Post openings once and review applicants ranked by how well their skills match your requirements.</p>
+        <span class="go">Continue as a company <span>→</span></span>
+      </a>
+      <a class="portal reveal" style="--d:.24s" href="coordinator/login.html">
+        <div class="ic">🏫</div>
+        <h3>For schools</h3>
+        <p>Follow every student's OJT: placements, daily hours, documents and completion certificates, all in one place.</p>
+        <span class="go">Continue as a coordinator <span>→</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="s bg-soft" id="how">
+  <div class="wrap">
+    <div class="center reveal">
+      <div class="eyebrow">How it works</div>
+      <h2 class="title">From sign-up to shortlist in three steps</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="n">1</div><h3>Create your profile</h3><p>Sign up, verify your email and add your skills and resume.</p></div>
+      <div class="step reveal" style="--d:.12s"><div class="n">2</div><h3>Prove your skills</h3><p>Take short skill tests so companies see verified scores.</p></div>
+      <div class="step reveal" style="--d:.24s"><div class="n">3</div><h3>Get matched</h3><p>See match percentages, apply and track every application.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="features">
+  <div class="wrap">
+    <div class="center reveal">
+      <div class="eyebrow">Features</div>
+      <h2 class="title">Everything you need to hire and get hired</h2>
+    </div>
+    <div class="features">
+      <div class="feat reveal"><div class="e">🎯</div><h3>Smart matching</h3><p>Match percentages based on skills, not keywords.</p></div>
+      <div class="feat reveal" style="--d:.08s"><div class="e">✅</div><h3>Verified skills</h3><p>Skill tests give companies real signal.</p></div>
+      <div class="feat reveal" style="--d:.16s"><div class="e">📋</div><h3>Application tracking</h3><p>Follow each application from applied to hired.</p></div>
+      <div class="feat reveal" style="--d:.24s"><div class="e">📅</div><h3>Interview scheduling</h3><p>Invite, schedule and get notified in one place.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" style="padding-top:0">
+  <div class="wrap">
+    <div class="band reveal">
+      <div class="orb o1" style="background:#B7A4FF;opacity:.4"></div><div class="orb o2" style="background:#2FE0B8;opacity:.25"></div>
+      <h2>Ready to find your match?</h2>
+      <p>Join ITern today. It only takes a couple of minutes.</p>
+      <div class="cta">
+        <a class="primary" href="student/register.html">Create a student account</a>
+        <a class="secondary" href="company/register.html">Create a company account</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap"><span>© ITern. All rights reserved.</span><span>Match skills. Find internships. <a href="admin/login.html" style="color:inherit;opacity:.5;margin-left:12px;text-decoration:none;">Admin</a></span></div>
+</footer>
+
+<script>
+  // animated headline words (keeps the gradient span intact)
+  (function () {
+    var h = document.getElementById('headline'), i = 0;
+    function wrap(node) {
+      if (node.nodeType === 3) {
+        var f = document.createDocumentFragment();
+        node.textContent.split(/(\s+)/).forEach(function (t) {
+          if (!t.trim()) { f.appendChild(document.createTextNode(t)); return; }
+          var s = document.createElement('span'); s.className = 'w'; s.textContent = t;
+          s.style.animationDelay = (0.1 + i++ * 0.09) + 's'; f.appendChild(s);
+        });
+        node.parentNode.replaceChild(f, node);
+      } else { [].slice.call(node.childNodes).forEach(wrap); }
+    }
+    wrap(h);
+    h.querySelectorAll('.grad .w').forEach(function (w) { w.style.color = 'inherit'; });
+  })();
+  // nav background on scroll
+  var nav = document.getElementById('nav');
+  addEventListener('scroll', function () { nav.classList.toggle('scrolled', scrollY > 40); }, { passive: true });
+  // reveal on scroll
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: .15 });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+</script>
 </body>
 </html>

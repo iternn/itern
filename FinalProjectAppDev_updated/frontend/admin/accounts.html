@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accounts · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
+    <main class="main">
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>ACCOUNTS</div><h1>All accounts.</h1><p>Search, suspend, reinstate or remove any company, coordinator or student.</p></div>
+      <div class="card">
+        <div class="tabs" style="margin-top:0;" id="roleTabs">
+          <button class="tab active" data-role="company" type="button">Companies</button>
+          <button class="tab" data-role="coordinator" type="button">Coordinators</button>
+          <button class="tab" data-role="intern" type="button">Students</button>
+        </div>
+        <div class="filters"><input class="input grow" id="q" placeholder="Search name, email or school…">
+          <select class="input" id="statusFilter"><option value="">Any status</option><option>Pending</option><option>Approved</option><option>Rejected</option><option>Suspended</option></select></div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Account</th><th id="detailHead">Details</th><th>Status</th><th>Joined</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+      </div>
+    </main>
+    </div>
+  </div>
+
+<script type="module">
+import { renderNav } from '../assets/js/nav.js';
+renderNav('admin', 'accounts');
+import { api, Session } from '../assets/js/api.js';
+import { esc, statusPill, fmtDate, onLive } from '../assets/js/nav.js';
+import { actionButtons, wireActions } from '../assets/js/admin.js';
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+let role = ['company', 'coordinator', 'intern'].includes(params.get('role')) ? params.get('role') : 'company';
+$('q').value = params.get('q') || '';
+const DETAIL = {
+  company: ['Industry · postings', a => `${esc(a.industry || '—')}<div class="row-sub">${a.postings} posting${a.postings === 1 ? '' : 's'}</div>`],
+  coordinator: ['School', a => `${esc(a.school)}<div class="row-sub">${esc(a.position || '')} · ${a.students} student${a.students === 1 ? '' : 's'}</div>`],
+  intern: ['School · applications', a => `${esc(a.school || '—')}<div class="row-sub">${esc(a.program || '')} · ${a.applications} application${a.applications === 1 ? '' : 's'}</div>`],
+};
+async function load() {
+  document.querySelectorAll('#roleTabs .tab').forEach(t => t.classList.toggle('active', t.dataset.role === role));
+  $('detailHead').textContent = DETAIL[role][0];
+  const qs = new URLSearchParams({ role, status: $('statusFilter').value, q: $('q').value.trim() });
+  const rows = await api('/admin/accounts?' + qs, { token: Session.token() });
+  $('rows').innerHTML = rows.map(a => `<tr>
+      <td><b>${esc(a.name)}</b><div class="row-sub">${esc(a.email)}</div></td>
+      <td>${DETAIL[role][1](a)}</td>
+      <td>${statusPill(a.account_status)}${a.status_note ? `<div class="row-sub">${esc(a.status_note)}</div>` : ''}</td>
+      <td>${a.created_at ? esc(fmtDate(a.created_at)) : '—'}</td>
+      <td style="white-space:nowrap;">${actionButtons(a)}</td></tr>`).join('') || '<tr><td colspan="5"><div class="empty-state">No accounts match.</div></td></tr>';
+  wireActions($('rows'), role, load);
+}
+document.querySelectorAll('#roleTabs .tab').forEach(t => t.addEventListener('click', () => { role = t.dataset.role; load(); }));
+$('statusFilter').addEventListener('change', load);
+let timer; $('q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(load, 250); });
+if (params.get('status')) $('statusFilter').value = params.get('status');
+onLive(load); load().catch(e => { $('rows').innerHTML = `<tr><td colspan="5"><div class="empty-state">${esc(e.message)}</div></td></tr>`; });
+</script>
+</body>
+</html>

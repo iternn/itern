@@ -7,52 +7,68 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/base.css">
-<style>.quick-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }</style>
 </head>
 <body>
   <div class="app-shell">
     <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
     <main class="main">
       <div class="page-banner">
-        <div class="eyebrow"><span class="bar"></span>WELCOME BACK</div>
-        <h1 id="greeting">Welcome</h1>
-        <p>Here's where to pick up on your internship search.</p>
+        <div class="eyebrow"><span class="bar"></span><span id="welcomeEyebrow">WELCOME BACK</span></div>
+        <h1>Manage your internship journey.</h1>
+        <p>Track applications, discover new matches, and keep your profile sharp so companies notice you.</p>
       </div>
+      <div id="offerAlert"></div>
+      <div id="ojtCard"></div>
       <div class="stat-grid" id="statGrid">
-        <div class="stat-card"><div class="value" id="statApplied">–</div><div class="label">Active applications</div></div>
-        <div class="stat-card"><div class="value" id="statInterviews">–</div><div class="label">Interviews scheduled</div></div>
-        <div class="stat-card"><div class="value" id="statSkills">–</div><div class="label">Skills on profile</div></div>
-        <div class="stat-card"><div class="value" id="statTopMatch">–</div><div class="label">Top match score</div></div>
+        <div class="stat-card"><div class="stat-icon tone-blue" data-icon="briefcase"></div><div class="value" id="statApplied">–</div><div class="label">Active applications</div></div>
+        <div class="stat-card"><div class="stat-icon tone-amber" data-icon="calendar"></div><div class="value" id="statInterviews">–</div><div class="label">Interviews scheduled</div></div>
+        <div class="stat-card"><div class="stat-icon tone-green" data-icon="check"></div><div class="value" id="statSkills">–</div><div class="label">Skills on profile</div></div>
+        <div class="stat-card"><div class="stat-icon tone-violet" data-icon="target"></div><div class="value" id="statTopMatch">–</div><div class="label">Top match score</div></div>
       </div>
-      <div class="dash-grid">
-        <div class="quick-grid">
-          <a class="card" href="profile.html"><h3>Profile</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Update skills and your resume</p></a>
-          <a class="card" href="skills-test.html"><h3>Verify Skills</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Confirm a resume-claimed skill is real</p></a>
-          <a class="card" href="matches.html"><h3>Matches</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">See ranked internships</p></a>
-          <a class="card" href="applications.html"><h3>Applications</h3><p style="color:var(--ink-500);font-size:13px;margin-top:6px;">Track your pipeline</p></a>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-head"><h3>Recommended for you</h3><a href="matches.html">See all</a></div>
+          <div class="row-list" id="recList"><div class="empty-state">Loading…</div></div>
         </div>
         <div class="card pipeline-card">
-          <h3 style="margin-bottom:4px;">Application Progress</h3>
-          <div class="donut" id="pipelineDonut"><div class="donut-inner"><b id="pipelinePct">0%</b><span>Complete</span></div></div>
+          <div class="card-head"><h3>Application Progress</h3></div>
+          <div class="donut" id="pipelineDonut"><div class="donut-inner"><b id="pipelinePct">0%</b><span>Offers</span></div></div>
           <div class="pipeline-legend" id="pipelineLegend"></div>
         </div>
       </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-head"><h3>Upcoming interviews</h3><a href="applications.html">View applications</a></div>
+        <div id="agendaList"><div class="empty-state">Loading…</div></div>
+      </div>
+      <div class="eyebrow-sm">QUICK ACTIONS</div>
+      <div class="quick-grid three" style="display:grid;gap:14px;">
+        <a class="card quick-card" href="profile.html"><div class="stat-icon tone-blue" data-icon="upload" data-size="15"></div><div><b>Update resume</b><p>Keep your profile current</p></div></a>
+        <a class="card quick-card" href="messages.html"><div class="stat-icon tone-green" data-icon="chat" data-size="15"></div><div><b>Messages</b><p>Chat with companies</p></div></a>
+        <a class="card quick-card" href="matches.html"><div class="stat-icon tone-violet" data-icon="search" data-size="15"></div><div><b>Find matches</b><p>Browse ranked internships</p></div></a>
+      </div>
     </main>
+    </div>
   </div>
 
 <script type="module">
 import { api, Session } from '../assets/js/api.js';
-import { renderNav } from '../assets/js/nav.js';
+import { renderNav, onLive, esc, initialsOf } from '../assets/js/nav.js';
+import { rankPostings } from '../assets/js/match.js';
+import { mountAgenda } from '../assets/js/agenda.js';
 renderNav('student', 'dashboard');
+onLive(() => loadStats());
 const user = Session.get();
 if (!user) window.location.href = 'login.html';
-else greeting.textContent = `Welcome, ${user.name.split(' ')[0]}`;
+else welcomeEyebrow.textContent = `WELCOME BACK, ${user.name.split(' ')[0].toUpperCase()}`;
 
 const STAGES = [
   { key: 'Applied', color: 'var(--violet-500)' },
   { key: 'Waitlisted', color: 'var(--amber-500, #C9922B)' },
   { key: 'Interviewing', color: 'var(--sky-500, #3B6FE0)' },
   { key: 'Offer', color: 'var(--mint-500, #1F9D55)' },
+  { key: 'Accepted', color: 'var(--mint-600, #0AA382)' },
 ];
 
 async function loadStats() {
@@ -61,20 +77,59 @@ async function loadStats() {
       api('/interns/me', { token: Session.token() }),
       api('/applications/mine', { token: Session.token() }),
     ]);
-    const activeStatuses = ['Applied', 'Waitlisted', 'Interviewing'];
+    const activeStatuses = ['Applied', 'Waitlisted', 'Interviewing', 'Offer'];
     statApplied.textContent = apps.filter(a => activeStatuses.includes(a.status)).length;
     statInterviews.textContent = apps.filter(a => a.status === 'Interviewing' && a.scheduled_at).length;
     statSkills.textContent = me.skills.length;
     statTopMatch.textContent = apps.length ? Math.max(...apps.map(a => a.match_score)) + '%' : '—';
     drawPipeline(apps);
+    drawOfferAlert(apps);
+    mountAgenda(agendaList, 'student');
+    drawOjt();
+    loadRecommended(me, apps);
   } catch {
     // Any single stat failing shouldn't break the page — leave dashes in place.
+    recList.innerHTML = '<div class="empty-state">Couldn\'t load recommendations right now.</div>';
   }
+}
+
+async function loadRecommended(me, apps) {
+  let postings = [];
+  try { postings = await api('/postings'); } catch {}
+  const appliedIds = new Set(apps.map(a => a.posting_id));
+  const top = rankPostings(me, postings).filter(p => !appliedIds.has(p.id) && p._score > 0).slice(0, 3);
+  recList.innerHTML = top.map(p => `
+    <div class="row-item">
+      <div class="row-avatar">${esc(initialsOf(p.title))}</div>
+      <div><div class="row-title">${esc(p.title)}</div><div class="row-sub">${esc(p.company_name)} · ${esc(p.work_mode)}</div></div>
+      <div class="row-meta"><span class="match-label">${p._score}% Match</span><a class="btn btn-primary btn-sm" href="matches.html">View</a></div>
+    </div>`).join('') || '<div class="empty-state">No skill matches yet — add skills to your <a href="profile.html" style="color:var(--violet-600);font-weight:700;">profile</a> to get recommendations.</div>';
+}
+
+// Shows hours progress once the student has an accepted placement.
+async function drawOjt() {
+  try {
+    const list = await api('/ojt/placements', { token: Session.token() });
+    if (!list.length) { ojtCard.innerHTML = ''; return; }
+    const p = list[0], h = p.hours;
+    ojtCard.innerHTML = `<div class="card" style="margin-bottom:16px;"><div class="card-head"><h3>My OJT · ${esc(p.company.name)}</h3><a href="ojt.html">Open</a></div>
+      ${h.required ? `<div class="meter ${h.percent >= 100 ? 'done' : ''}"><i style="width:${h.percent}%"></i></div>` : ''}
+      <div class="mini-stats"><div><b>${h.approved}${h.required ? ' / ' + h.required : ''}</b>hours approved</div><div><b>${h.pending}</b>awaiting approval</div>
+      <div><b>${p.docs.approved} / ${p.docs.total}</b>documents approved</div>${p.completedAt ? '<div><b>🎉</b>Completed — certificate ready</div>' : ''}</div></div>`;
+  } catch { /* the card is optional */ }
+}
+
+function drawOfferAlert(apps) {
+  const offers = apps.filter(a => a.status === 'Offer');
+  offerAlert.innerHTML = offers.length ? `<div class="alert-banner">
+      <div><b>🎉 You have ${offers.length === 1 ? 'an offer' : offers.length + ' offers'} waiting for your answer</b>
+      <span>${offers.map(o => esc(o.company_name)).join(', ')} — review the duration, schedule and allowance, then accept or decline.</span></div>
+      <a class="btn btn-sm" href="applications.html">Review ${offers.length === 1 ? 'offer' : 'offers'}</a></div>` : '';
 }
 
 function drawPipeline(apps) {
   const total = apps.length;
-  const offerCount = apps.filter(a => a.status === 'Offer').length;
+  const offerCount = apps.filter(a => a.status === 'Offer' || a.status === 'Accepted').length;
   const pct = total ? Math.round((offerCount / total) * 100) : 0;
   pipelinePct.textContent = pct + '%';
   let acc = 0;

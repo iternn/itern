@@ -7,8 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/messages.css">
 <style>
-  .content { max-width: 640px; }
   .skill-tag { display:inline-flex; align-items:center; gap:8px; background:var(--violet-100);
     color:var(--violet-700); padding:6px 10px; border-radius:999px; font-size:12.5px;
     font-weight:700; margin:4px 6px 4px 0; }
@@ -16,113 +16,297 @@
   .upload-zone { border:1.5px dashed var(--ink-100); border-radius:var(--r-lg); padding:28px; text-align:center;
     cursor:pointer; background:var(--ink-50); transition: all var(--dur-base) var(--ease-out); }
   .upload-zone:hover, .upload-zone.dragover { border-color: var(--violet-500); background: var(--violet-50, var(--violet-100)); }
+  .upload-zone .stat-icon { margin: 0 auto 10px; }
   .status-text { font-size:13px; color: var(--ink-500); margin-top:10px; }
+  .progress-bar { margin: 10px 0 16px; }
 </style>
 </head>
 <body>
   <div class="app-shell">
     <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
     <main class="main">
-      <div class="content">
-      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>YOUR PROFILE</div><h1>My Profile</h1><p>This is how companies will see you.</p></div>
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>YOUR PROFILE</div><h1>Make your profile stand out.</h1><p>Keep your skills, education, and resume up to date so companies can find the right fit.</p></div>
+      <div class="stat-grid cols-3">
+        <div class="stat-card"><div class="stat-icon tone-green" data-icon="check"></div><div class="value" id="statComplete">–</div><div class="label">Profile completion</div></div>
+        <div class="stat-card"><div class="stat-icon tone-blue" data-icon="briefcase"></div><div class="value" id="statSkills">–</div><div class="label">Skills listed</div></div>
+        <div class="stat-card"><div class="stat-icon tone-violet" data-icon="target"></div><div class="value" id="statResume">–</div><div class="label">Resume</div></div>
+      </div>
 
-      <div class="card" style="margin-bottom:20px;">
-        <h3>Skills</h3>
-        <div style="display:flex; gap:8px; margin:14px 0;">
-          <input class="input" id="skillName" placeholder="Add a skill, e.g. Python">
-          <select class="input" id="skillLevel" style="width:140px;">
-            <option value="90">Advanced</option>
-            <option value="65" selected>Intermediate</option>
-            <option value="35">Beginner</option>
-          </select>
-          <button class="btn btn-primary" id="addSkillBtn" type="button">Add</button>
+      <div class="grid2">
+        <div class="card">
+          <div class="profile-head">
+            <div class="avatar-lg" id="profileAvatar">?</div>
+            <div><b id="profileName">Your name</b><p id="profileSchool"></p></div>
+          </div>
+          <div class="skills-label">SKILLS <span class="skill-count" id="skillCount">0/15</span></div>
+          <div id="skillTags"></div>
+          <p class="skill-note" id="skillNote"></p>
+          <div style="display:flex; gap:8px; margin:6px 0 0;">
+            <input class="input" id="skillName" placeholder="Add skills separated by commas, e.g. Python, SQL, Git">
+            <select class="input" id="skillLevel" style="width:140px;">
+              <option value="65" selected>Intermediate</option>
+              <option value="35">Beginner</option>
+            </select>
+            <button class="btn btn-primary" id="addSkillBtn" type="button">Add</button>
+          </div>
+          <div id="skillSuggest" class="skill-suggest"></div>
+          <div class="error-text" id="skillErr"></div>
+          <div class="help-text">Start typing and pick from the suggestions (separate several with commas). Press Enter or Add. The level you pick applies to every skill in the box.</div>
+          <div class="skills-label" style="margin-top:20px;">CAREER GOAL</div>
+          <input class="input" id="careerGoal" placeholder="e.g. Software engineer, backend-focused">
+          <button class="btn btn-primary btn-block" id="saveBtn" style="margin-top:18px;">Save changes</button>
         </div>
-        <div id="skillTags"></div>
 
-        <h3 style="margin-top:24px;">Career goal</h3>
-        <input class="input" id="careerGoal" style="margin-top:10px;" placeholder="e.g. Software engineer, backend-focused">
-
-        <button class="btn btn-primary" id="saveBtn" style="margin-top:20px;">Save changes</button>
+        <div class="card">
+          <div class="card-head"><h3>Profile Completion</h3><b style="color:var(--violet-600);" id="completePct">0%</b></div>
+          <div class="progress-bar"><div class="fill" id="completeFill" style="width:0%"></div></div>
+          <div id="checklist"></div>
+        </div>
       </div>
 
       <div class="card">
-        <h3>Resume</h3>
-        <p class="help-text">No resume yet? <a href="../assets/files/ITern_Resume_Template.pdf" download style="color:var(--violet-600);font-weight:700;">Download our template</a>, fill it in, and upload the PDF below.</p>
-        <div class="upload-zone" id="uploadZone" style="margin-top:14px;">
-          <div style="font-size:24px;margin-bottom:8px;">&#128196;</div>
-          <div style="font-weight:700;font-size:13px;">Click or drag your resume here</div>
-          <div class="help-text">PDF only, up to 10MB</div>
-          <input type="file" id="resumeInput" accept="application/pdf" hidden>
-        </div>
+        <div class="card-head"><h3>Application requirements</h3><b style="color:var(--violet-600);" id="reqCount"></b></div>
+        <p class="help-text" style="margin:0 0 14px;">Companies receive these with every application, and you can't apply until all of them are on file. Upload them once and they're reused.</p>
+        <div id="reqList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Resume</h3></div>
+        <p class="help-text" style="margin:0 0 14px;">No resume yet? <a href="../assets/files/ITern_Resume_Template.docx" download style="color:var(--violet-600);font-weight:700;">Download our Word template</a>, fill it in, save it as a PDF, and upload the PDF below.</p>
+        <div class="upload-zone" id="uploadZone"></div>
+        <input type="file" id="resumeInput" accept="application/pdf" hidden>
         <div class="error-text" id="resumeErr">Only PDF files are accepted.</div>
         <div class="status-text" id="resumeStatus"></div>
       </div>
-      </div>
     </main>
+    </div>
   </div>
+
+  <div class="modal-backdrop" id="pdfBackdrop"><div class="modal pdf-modal" id="pdfModal"></div></div>
 
 <script type="module">
 import { api, Session, API_BASE } from '../assets/js/api.js';
-import { renderNav } from '../assets/js/nav.js';
+import { renderNav, icon, esc, initialsOf, fmtDate, toast } from '../assets/js/nav.js';
+import { getRequirements, mountChecklist } from '../assets/js/requirements.js';
 renderNav('student', 'profile');
 
 let skills = [];
+let me = null;
+let catalog = [];
+let limits = { total: 15, selfDeclared: 5, selfLevel: 65 };
+const SKILL_RE = /^[A-Za-z0-9][A-Za-z0-9 +#.\/&()\-]{0,29}$/;
 
 async function load() {
-  const me = await api('/interns/me', { token: Session.token() });
-  skills = me.skills.map(s => ({ name: s.name, level: s.level }));
+  if (!catalog.length) { try { catalog = await api('/interns/skill-catalog', { token: Session.token() }); } catch {} }
+  me = await api('/interns/me', { token: Session.token() });
+  skills = me.skills.map(s => ({ name: s.name, level: s.level, source: s.source }));
+  if (me.skillLimits) limits = me.skillLimits;
   careerGoal.value = me.career_goal || '';
+  profileAvatar.textContent = initialsOf(me.name);
+  profileName.textContent = me.name;
+  profileSchool.innerHTML = [me.program, me.school].filter(Boolean).map(esc).join('<br>');
   renderSkills();
-  if (me.resume_path) resumeStatus.textContent = 'Resume on file — upload a new one to replace it.';
+  renderResume();
+  drawCompletion();
+  loadRequirements();
 }
+
+async function loadRequirements() {
+  try {
+    const st = await getRequirements();
+    mountChecklist(reqList, st, (x) => { reqCount.textContent = `${x.items.filter(i => i.done).length}/${x.items.length} ready`; });
+  } catch (err) { reqList.innerHTML = `<p class="help-text">${esc(err.message)}</p>`; }
+}
+
+// Completion is computed from what's actually saved / staged on this page.
+function drawCompletion() {
+  const items = [
+    ['Personal information', !!(me?.name && me?.email)],
+    ['Education', !!(me?.school && me?.program)],
+    ['Skills', skills.length > 0],
+    ['Resume', !!me?.resume_path],
+    ['Career goal', !!careerGoal.value.trim()],
+  ];
+  const pct = Math.round(items.filter(i => i[1]).length / items.length * 100);
+  completePct.textContent = pct + '%';
+  completeFill.style.width = pct + '%';
+  checklist.innerHTML = items.map(([label, ok]) =>
+    `<div class="check-row ${ok ? 'ok' : 'todo'}">${icon(ok ? 'check' : 'alert', 15)}${label}</div>`).join('');
+  statComplete.textContent = pct + '%';
+  statSkills.textContent = skills.length;
+  statResume.textContent = me?.resume_path ? 'On file' : 'Missing';
+}
+
+const selfCount = () => skills.filter(s => s.source === 'manual').length;
+const srcLabel = (s) => s.source === 'manual' ? 'self-declared' : s.source === 'skills_test' ? 'tested' : 'from resume';
 
 function renderSkills() {
   skillTags.innerHTML = skills.map((s, i) =>
-    `<span class="skill-tag">${s.name} · ${s.level}%<button data-i="${i}">&times;</button></span>`
-  ).join('') || '<p style="color:var(--ink-500);font-size:13px;">No skills yet.</p>';
+    `<span class="skill-tag ${s.source === 'manual' ? 'self' : ''}">${esc(s.name)} · ${s.level}% <span class="skill-src">${srcLabel(s)}</span><button data-i="${i}" type="button" aria-label="Remove ${esc(s.name)}">&times;</button></span>`
+  ).join('') || '<p style="color:var(--ink-500);font-size:13px;margin:0;">No skills yet.</p>';
   skillTags.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     skills.splice(Number(b.dataset.i), 1);
     renderSkills();
+    drawCompletion();
   }));
+  skillCount.textContent = `${skills.length}/${limits.total}`;
+  skillCount.classList.toggle('full', skills.length >= limits.total);
+  const left = Math.max(0, limits.selfDeclared - selfCount());
+  skillNote.textContent = `Skills found in your resume are verified. You can type in up to ${limits.selfDeclared} yourself (${left} left) — they're marked self-declared and capped at Intermediate, since there's no proof behind them yet. Upload your resume to add more.`;
 }
 
-addSkillBtn.addEventListener('click', () => {
-  if (!skillName.value.trim()) return;
-  skills.push({ name: skillName.value.trim(), level: Number(skillLevel.value) });
-  skillName.value = '';
+function showSkillErr(msg) { skillErr.textContent = msg; skillErr.classList.toggle('show', !!msg); }
+
+// "Python, SQL,  git" -> three skills. Handles spaces, empty pieces, duplicates, bad characters and the limits.
+function addSkills() {
+  showSkillErr('');
+  const parts = skillName.value.split(',').map(x => x.trim().replace(/\s+/g, ' ')).filter(Boolean);
+  if (!parts.length) return;
+  const have = new Set(skills.map(s => s.name.toLowerCase()));
+  const added = [], dupes = [], bad = [], skipped = [];
+  for (const name of parts) {
+    const approved = catalog.find(c => c.toLowerCase() === name.toLowerCase());
+    if (!SKILL_RE.test(name) || !approved) { bad.push(name); continue; }
+    if (have.has(approved.toLowerCase())) { dupes.push(approved); continue; }
+    if (skills.length >= limits.total || selfCount() >= limits.selfDeclared) { skipped.push(name); continue; }
+    skills.push({ name: approved, level: Math.min(Number(skillLevel.value), limits.selfLevel), source: 'manual' });
+    have.add(approved.toLowerCase());
+    added.push(approved);
+  }
+  const notes = [];
+  if (bad.length) notes.push(`Not on our skills list: ${bad.join(', ')}. Pick from the suggestions below the box.`);
+  if (dupes.length) notes.push(`Already on your list: ${dupes.join(', ')}.`);
+  if (skipped.length) notes.push(skills.length >= limits.total
+    ? `Skill limit reached (${limits.total}). Not added: ${skipped.join(', ')}.`
+    : `You can type in up to ${limits.selfDeclared} skills yourself. Not added: ${skipped.join(', ')}. Upload your resume to verify more.`);
+  showSkillErr(notes.join(' '));
+  // keep only what couldn't be added so the student can fix it
+  skillName.value = [...bad, ...skipped].join(', ');
   renderSkills();
-});
+  drawCompletion();
+}
+
+// Suggestions for the piece being typed (after the last comma). Click one to fill it in.
+function drawSuggestions() {
+  const pieces = skillName.value.split(',');
+  const frag = pieces[pieces.length - 1].trim().toLowerCase();
+  const taken = new Set([...skills.map(s => s.name.toLowerCase()), ...pieces.slice(0, -1).map(x => x.trim().toLowerCase())]);
+  const hits = frag.length < 1 ? [] : catalog
+    .filter(c => !taken.has(c.toLowerCase()) && c.toLowerCase().includes(frag))
+    .sort((a, b) => (b.toLowerCase().startsWith(frag) - a.toLowerCase().startsWith(frag)) || a.localeCompare(b))
+    .slice(0, 8);
+  skillSuggest.innerHTML = hits.map(h => `<button type="button" class="skill-sug" data-s="${esc(h)}">${esc(h)}</button>`).join('');
+  skillSuggest.querySelectorAll('.skill-sug').forEach(b => b.addEventListener('click', () => {
+    pieces[pieces.length - 1] = ' ' + b.dataset.s;
+    skillName.value = pieces.join(',').replace(/^\s+/, '') + ', ';
+    skillName.focus(); drawSuggestions();
+  }));
+}
+skillName.addEventListener('input', drawSuggestions);
+
+addSkillBtn.addEventListener('click', () => { addSkills(); drawSuggestions(); });
+skillName.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addSkills(); } });
+careerGoal.addEventListener('input', drawCompletion);
 
 saveBtn.addEventListener('click', async () => {
-  await api('/interns/me', { method: 'PATCH', token: Session.token(), body: { careerGoal: careerGoal.value, skills } });
-  saveBtn.textContent = 'Saved ✓';
-  setTimeout(() => saveBtn.textContent = 'Save changes', 1500);
+  try {
+    await api('/interns/me', { method: 'PATCH', token: Session.token(), body: { careerGoal: careerGoal.value, skills } });
+    saveBtn.textContent = 'Saved ✓';
+    setTimeout(() => saveBtn.textContent = 'Save changes', 1500);
+    load();
+  } catch (err) { showSkillErr(err.message); toast(err.message); }
 });
 
-uploadZone.addEventListener('click', () => resumeInput.click());
+/* ---------------- Resume box ---------------- */
+let uploading = false;
+
+// The box always shows the current state: empty prompt -> uploading -> the file on record.
+function renderResume() {
+  if (uploading) {
+    uploadZone.style.cursor = 'default';
+    uploadZone.innerHTML = '<div style="font-weight:700;font-size:13.5px;">Uploading your resume…</div><div class="help-text">Reading your skills — this takes a few seconds.</div>';
+    return;
+  }
+  if (me?.resume_path) {
+    uploadZone.style.cursor = 'default';
+    const name = me.resume_original_name || 'Resume.pdf';
+    uploadZone.innerHTML = `
+      <div class="resume-file">
+        <div class="resume-file__icon">${icon('file', 22)}</div>
+        <div style="min-width:0;">
+          <div class="resume-file__name">${esc(name)}</div>
+          <div class="resume-file__sub">PDF · ${me.resume_uploaded_at ? `uploaded ${fmtDate(me.resume_uploaded_at)}` : 'on file'} · drag a new PDF here to replace it</div>
+        </div>
+        <div class="resume-file__actions">
+          <button class="btn btn-primary btn-sm" id="viewResumeBtn" type="button">View</button>
+          <button class="btn btn-ghost btn-sm" id="replaceResumeBtn" type="button">Replace</button>
+        </div>
+      </div>`;
+    document.getElementById('viewResumeBtn').addEventListener('click', viewResume);
+    document.getElementById('replaceResumeBtn').addEventListener('click', () => resumeInput.click());
+    return;
+  }
+  uploadZone.style.cursor = 'pointer';
+  uploadZone.innerHTML = `
+    <div class="stat-icon tone-violet">${icon('upload', 20)}</div>
+    <div style="font-weight:700;font-size:13.5px;">Upload or drag your resume</div>
+    <div class="help-text">PDF only, up to 10MB</div>`;
+}
+
+uploadZone.addEventListener('click', () => { if (!uploading && !me?.resume_path) resumeInput.click(); });
 ['dragover', 'dragleave', 'drop'].forEach(evt => uploadZone.addEventListener(evt, (e) => {
   e.preventDefault();
   uploadZone.classList.toggle('dragover', evt === 'dragover');
   if (evt === 'drop' && e.dataTransfer.files[0]) handleResume(e.dataTransfer.files[0]);
 }));
-resumeInput.addEventListener('change', (e) => { if (e.target.files[0]) handleResume(e.target.files[0]); });
+resumeInput.addEventListener('change', (e) => { if (e.target.files[0]) handleResume(e.target.files[0]); resumeInput.value = ''; });
 
 async function handleResume(file) {
-  if (file.type !== 'application/pdf') {
-    resumeErr.classList.add('show');
-    return;
-  }
+  if (file.type !== 'application/pdf') { resumeErr.textContent = 'Only PDF files are accepted.'; resumeErr.classList.add('show'); return; }
+  if (file.size > 10 * 1024 * 1024) { resumeErr.textContent = 'That file is over 10MB.'; resumeErr.classList.add('show'); return; }
   resumeErr.classList.remove('show');
-  resumeStatus.textContent = 'Uploading…';
-  const form = new FormData();
-  form.append('resume', file);
-  const res = await fetch(API_BASE + '/interns/resume', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${Session.token()}` },
-    body: form,
-  });
-  const data = await res.json();
-  resumeStatus.textContent = res.ok ? `Uploaded: ${data.fileName}` : data.error;
+  uploading = true; renderResume();
+  resumeStatus.textContent = '';
+  try {
+    const form = new FormData();
+    form.append('resume', file);
+    const res = await fetch(API_BASE + '/interns/resume', { method: 'POST', headers: { Authorization: `Bearer ${Session.token()}` }, body: form });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Upload failed.');
+    resumeStatus.textContent = 'Resume saved. Skills found in it were added to your profile.';
+  } catch (err) {
+    resumeErr.textContent = err.message; resumeErr.classList.add('show');
+  } finally {
+    uploading = false;
+    await load();   // re-read the profile: the resume stays in the box, parsed skills show up
+  }
+}
+
+/* ---------------- View resume (in-page PDF viewer) ---------------- */
+let blobUrl = null;
+function closePdf() { pdfBackdrop.classList.remove('open'); pdfModal.innerHTML = ''; if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; } }
+pdfBackdrop.addEventListener('click', (e) => { if (e.target === pdfBackdrop) closePdf(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePdf(); });
+
+async function viewResume() {
+  try {
+    const res = await fetch(API_BASE + '/interns/me/resume', { headers: { Authorization: `Bearer ${Session.token()}` } });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not open your resume.');
+    blobUrl = URL.createObjectURL(await res.blob());
+    const name = me.resume_original_name || 'Resume.pdf';
+    pdfModal.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <h3 style="flex:1;font-size:15px;word-break:break-all;">${esc(name)}</h3>
+        <a class="btn btn-ghost btn-sm" href="${blobUrl}" target="_blank" rel="noopener">Open in new tab</a>
+        <a class="btn btn-ghost btn-sm" href="${blobUrl}" download="${esc(name)}">Download</a>
+        <button class="btn btn-primary btn-sm" id="pdfClose" type="button">Close</button>
+      </div>
+      <iframe src="${blobUrl}" title="Resume preview"></iframe>`;
+    document.getElementById('pdfClose').addEventListener('click', closePdf);
+    pdfBackdrop.classList.add('open');
+  } catch (err) { toast(err.message); }
 }
 
 load();

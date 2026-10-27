@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overview · ITern</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/base.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div id="navMount"></div>
+    <div class="app-content">
+    <div id="topbarMount"></div>
+    <main class="main">
+      <div class="page-banner"><div class="eyebrow"><span class="bar"></span>ADMIN CONSOLE</div><h1>Keep ITern trustworthy.</h1><p>Approve new companies and school coordinators, and remove fake accounts.</p></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-icon tone-amber" data-icon="building"></div><div class="value" id="sCoPending">–</div><div class="label">Companies awaiting approval</div></div>
+        <div class="stat-card"><div class="stat-icon tone-amber" data-icon="users"></div><div class="value" id="sCoordPending">–</div><div class="label">Coordinators awaiting approval</div></div>
+        <div class="stat-card"><div class="stat-icon tone-blue" data-icon="user"></div><div class="value" id="sStudents">–</div><div class="label">Students</div></div>
+        <div class="stat-card"><div class="stat-icon tone-green" data-icon="briefcase"></div><div class="value" id="sPostings">–</div><div class="label">Active postings</div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px;"><div class="card-head"><h3>Companies waiting for approval</h3><a href="accounts.html?role=company">All companies</a></div><div id="pendCompanies"></div></div>
+      <div class="card"><div class="card-head"><h3>School coordinators waiting for approval</h3><a href="accounts.html?role=coordinator">All coordinators</a></div><div id="pendCoords"></div></div>
+    </main>
+    </div>
+  </div>
+
+<script type="module">
+import { renderNav } from '../assets/js/nav.js';
+renderNav('admin', 'dashboard');
+import { api, Session } from '../assets/js/api.js';
+import { esc, onLive, fmtDate } from '../assets/js/nav.js';
+import { actionButtons, wireActions } from '../assets/js/admin.js';
+const $ = (id) => document.getElementById(id);
+const get = (p) => api(p, { token: Session.token() });
+function list(el, rows, role, sub) {
+  el.innerHTML = rows.length ? rows.map(a => `<div class="row-item"><div style="min-width:0;flex:1;"><div class="row-title">${esc(a.name)}</div>
+      <div class="row-sub">${esc(a.email)} · ${esc(sub(a))}${a.created_at ? ' · signed up ' + esc(fmtDate(a.created_at)) : ''}</div></div>
+      <div class="row-meta">${actionButtons(a)}</div></div>`).join('') : '<div class="empty-state">Nobody is waiting. ✔</div>';
+  wireActions(el, role, load);
+}
+async function load() {
+  const [s, co, cc] = await Promise.all([get('/admin/stats'), get('/admin/accounts?role=company&status=Pending'), get('/admin/accounts?role=coordinator&status=Pending')]);
+  $('sCoPending').textContent = s.companies.Pending || 0; $('sCoordPending').textContent = s.coordinators.Pending || 0;
+  $('sStudents').textContent = Object.values(s.interns).reduce((a, b) => a + b, 0); $('sPostings').textContent = s.postings;
+  list($('pendCompanies'), co, 'company', a => a.industry || 'No industry given');
+  list($('pendCoords'), cc, 'coordinator', a => `${a.school}${a.position ? ' · ' + a.position : ''}`);
+}
+onLive(load); load().catch(e => { $('pendCompanies').innerHTML = `<div class="empty-state">${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>
